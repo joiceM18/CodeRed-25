@@ -11,7 +11,8 @@ const cors = require('cors');
 
 const map_route = {
     'GET': ['/getUsers'],
-    'POST': [],
+  'POST': ['/signup',
+            '/login'],
     'PUT': [],
     'DELETE': [],
 };

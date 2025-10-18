@@ -10,10 +10,11 @@ const { get } = require('http');
 
 const getUsers = async (req, res) => {
     try {
-        const [users] = await pool.promise().query(`SELECT * FROM users`);
-        
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ success: true, users }));  // Ensure response is sent
+        // Return users but exclude password_hash for safety
+        const [users] = await pool.promise().query(`SELECT userID, username, created_at FROM Users`);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, users }));
     } catch (err) {
         console.error('Error fetching users:', err);
         res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -21,7 +22,7 @@ const getUsers = async (req, res) => {
     }
 };
 
-/*
+
 const handleSignup = async (req, res) => {
     let body = '';
 
@@ -31,56 +32,38 @@ const handleSignup = async (req, res) => {
 
     req.on('end', async () => {
         try {
-            const parsedBody = JSON.parse(body);
-            const { accountType, email, username, password, image } = parsedBody;
+            const parsedBody = JSON.parse(body || '{}');
+            const { username, password } = parsedBody;
 
-            if (!accountType || !email || !username || !password) {
-                throw new Error('Missing required fields');
+            if (!username || !password) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, message: 'Missing required fields: username and password' }));
+                return;
             }
 
-            const validAccountTypes = ['user', 'artist'];
-            if (!validAccountTypes.includes(accountType)) {
-                throw new Error('Invalid account type');
-            }
-            const imageMatches = image.match(/^data:image\/(\w+);base64,(.+)$/);
-            if (!imageMatches) {
-                return res.writeHead(400, { 'Content-Type': 'application/json' })
-                    .end(JSON.stringify({
-                        success: false,
-                        message: 'Invalid image file format'
-                    }));
-            }
-
-            const fileTypeImage = imageMatches[1]; // jpeg, png, etc.
-            const base64DataImage = imageMatches[2];
-            const bufferImage = Buffer.from(base64DataImage, 'base64');
-
-            // Generate filename
-            const fileNameImage = `${username}-${Date.now()}.${fileTypeImage}`;
-
-            // Upload to Azure (or any storage service)
-            const imageUrl = await uploadToAzureBlobFromServer(bufferImage, fileNameImage);
-
-            const [result] = await pool.promise().query(
-                `INSERT INTO ?? (email, username, password, image_url, created_at) VALUES (?, ?, ?, ?, NOW())`,
-                [accountType, email, username, password, imageUrl]
+            // Check if username already exists in Users
+            const [existing] = await pool.promise().query(
+                `SELECT userID FROM Users WHERE username = ? LIMIT 1`,
+                [username]
             );
 
-            if (accountType === 'user') {
-
-            const [findUserId] = await pool.promise().query(
-                `SELECT user_id FROM user WHERE username = ?`, [username]);
-
-
-            const [createLikeAlbum] = await pool.promise().query(
-                `INSERT INTO playlist (name, user_id, image_url, created_at) VALUES (?, ?, ?, NOW())`, [`Liked Songs`, findUserId[0].user_id, `https://musiccontainer.blob.core.windows.net/mp3/liked_image.png`]
-            )
-        }
-            
-            
-                res.writeHead(201, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ success: true, message: 'Signup Success' }));
+            if (existing.length > 0) {
+                res.writeHead(409, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, message: 'Username already taken' }));
                 return;
+            }
+
+            // Insert new user (password stored in password_hash)
+            const [result] = await pool.promise().query(
+                `INSERT INTO Users (username, password_hash, created_at) VALUES (?, ?, NOW())`,
+                [username, password]
+            );
+
+            const userId = result.insertId;
+
+            res.writeHead(201, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, userId, message: 'Signup Success' }));
+            return;
 
         } catch (err) {
             console.error('Error during signup:', err);
@@ -88,8 +71,9 @@ const handleSignup = async (req, res) => {
             res.end(JSON.stringify({ success: false, message: err.message || 'Signup Failed' }));
         }
     });
-};*/
-/*
+};
+
+
 const handleLogin = async (req, res) => {
     let body = "";
 
@@ -108,7 +92,7 @@ const handleLogin = async (req, res) => {
 
             // Check in 'user' table
             const [user_check] = await pool.promise().query(
-                `SELECT user_id, username, image_url FROM user WHERE username = ? AND password = ?`, [username, password]
+                `SELECT userId, username, password_hash FROM users WHERE username = ? AND password_hash = ?`, [username, password]
             );
             console.log('User Check:', user_check);
 
@@ -116,45 +100,10 @@ const handleLogin = async (req, res) => {
                 res.writeHead(201, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({
                     success: true,
-                    userId: user_check[0].user_id,
+                    userId: user_check[0].uderId,
                     userName: user_check[0].username,
-                    userImage: user_check[0].image_url,
-                    accountType: 'user',
+                    password: user_check[0].password,
                     message: "User Account"
-                }));
-                return;
-            }
-
-            // Check in 'artist' table
-            const [artist_check] = await pool.promise().query(
-                `SELECT artist_id, username, image_url FROM artist WHERE username = ? AND password = ?`, [username, password]
-            );
-            if (artist_check.length > 0) {
-                res.writeHead(201, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({
-                    success: true,
-                    userId: artist_check[0].artist_id,
-                    userName: artist_check[0].username,
-                    userImage: artist_check[0].image_url,
-                    accountType: 'artist',
-                    message: "Artist Account"
-                }));
-                return;
-            }
-
-            // Check in 'admin' table
-            const [admin_check] = await pool.promise().query(
-                `SELECT admin_id, username, image_url FROM admin WHERE username = ? AND password = ?`, [username, password]
-            );
-            if (admin_check.length > 0) {
-                res.writeHead(201, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({
-                    success: true,
-                    userId: admin_check[0].admin_id,
-                    userName: admin_check[0].username,
-                    userImage: admin_check[0].image_url,
-                    accountType: 'admin',
-                    message: "Admin Account"
                 }));
                 return;
             }
@@ -173,11 +122,11 @@ const handleLogin = async (req, res) => {
         }
     });
 };
-*/
+
 
 
 module.exports = {
     getUsers,
-    /*handleSignup,
-    handleLogin,*/
+    handleSignup,
+    handleLogin
 };

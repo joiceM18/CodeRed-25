@@ -6,13 +6,17 @@ function routes(req, res) {
     const method = req.method;
 
     console.log(`Incoming request: ${method} ${URL}`);
-    /*
+
+    if (URL.startsWith('/getUsers') && method === 'GET') {
+        return actions.getUsers(req, res);
+    }
+
     if (URL.startsWith('/signup') && method === 'POST') {
         return actions.handleSignup(req, res);
-    } 
-    */
-   if (URL.startsWith('/getUsers') && method === 'GET') {
-        return actions.getUsers(req, res);
+    }
+
+    if (URL.startsWith('/login') && method === 'POST') {
+        return actions.handleLogin(req, res);
     }
 
 
