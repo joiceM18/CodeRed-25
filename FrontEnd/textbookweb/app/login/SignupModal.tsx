@@ -2,23 +2,15 @@
 
 import { useState } from "react";
 
-export default function SignupModal({
-  onClose,
-  onSuccess,
-  setError,
-  apiBase,
-}: {
+type Props = {
   onClose: () => void;
   onSuccess: () => void;
   setError: (m: string) => void;
   apiBase: string;
-}) {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    phone: "",
-  });
+};
+
+export default function SignupModal({ onClose, onSuccess, setError, apiBase }: Props) {
+  const [form, setForm] = useState({ username: "", password: "" });
   const [busy, setBusy] = useState(false);
 
   async function handleSignup() {
@@ -31,11 +23,12 @@ export default function SignupModal({
       });
       const data = await res.json();
       if (res.ok) {
+        // backend returns: { success, user: { userID, username } }
         localStorage.setItem("user", JSON.stringify(data.user));
         onSuccess();
         onClose();
       } else {
-        setError(data.error || "Signup failed.");
+        setError(data.message || "Signup failed.");
       }
     } catch (e) {
       console.error(e);
@@ -58,45 +51,28 @@ export default function SignupModal({
         <div className="mt-4 space-y-3">
           <input
             className="w-full rounded-lg bg-neutral-900 border border-neutral-700 px-4 py-3 focus:border-[#ffd700] outline-none"
-            placeholder="Full name"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          />
-          <input
-            className="w-full rounded-lg bg-neutral-900 border border-neutral-700 px-4 py-3 focus:border-[#ffd700] outline-none"
-            placeholder="Email"
-            type="email"
-            value={form.email}
-            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+            placeholder="Username"
+            type="text"
+            value={form.username}
+            onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
           />
           <input
             className="w-full rounded-lg bg-neutral-900 border border-neutral-700 px-4 py-3 focus:border-[#ffd700] outline-none"
             placeholder="Password"
             type="password"
             value={form.password}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, password: e.target.value }))
-            }
-          />
-          <input
-            className="w-full rounded-lg bg-neutral-900 border border-neutral-700 px-4 py-3 focus:border-[#ffd700] outline-none"
-            placeholder="Phone (optional)"
-            value={form.phone}
-            onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+            onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
           />
         </div>
 
         <div className="mt-6 flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-lg border border-neutral-700 py-3"
-          >
+          <button onClick={onClose} className="flex-1 rounded-lg border border-neutral-700 py-3">
             Cancel
           </button>
           <button
             onClick={handleSignup}
             disabled={busy}
-            className="flex-1 rounded-lg bg-[#ffd700] text-black font-semibold py-3 disabled:opacity-50"
+            className="flex-1 rounded-lg bg-[#ffd900dc] text-black font-semibold py-3 disabled:opacity-50"
           >
             {busy ? "Creating..." : "Sign up"}
           </button>

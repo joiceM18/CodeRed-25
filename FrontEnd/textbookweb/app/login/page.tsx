@@ -11,7 +11,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   // form state
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   // ui state
@@ -44,16 +44,16 @@ export default function LoginPage() {
       const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        const { customer_id, name, email: em, phone } = data.user ?? {};
+        const { customer_id, name, username: em, phone } = data.user ?? {};
         localStorage.setItem(
           "user",
-          JSON.stringify({ customer_id, name, email: em, phone })
+          JSON.stringify({ customer_id, name, username: em, phone })
         );
         router.push("/customer-dashboard"); // TODO: change to your route
       } else {
@@ -83,11 +83,11 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="mt-6 text-left">
-            <label className="block mb-2 text-sm">Email</label>
+            <label className="block mb-2 text-sm">Username</label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
               className="w-full rounded-lg bg-neutral-900 text-white placeholder:text-neutral-400 border border-neutral-700 focus:border-[#ffd700] focus:outline-none px-4 py-3"
               placeholder="you@example.com"
