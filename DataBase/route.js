@@ -11,6 +11,9 @@ function routes(req, res) {
         return actions.handleSignup(req, res);
     } 
     */
+   if (URL.startsWith('/getUsers') && method === 'GET') {
+        return actions.getUsers(req, res);
+    }
 
 
     res.writeHead(404, { "Content-Type": "application/json" });

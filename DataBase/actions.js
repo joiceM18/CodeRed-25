@@ -7,19 +7,20 @@ const path = require('path');
 const multer = require('multer');
 const { get } = require('http');
 
-/*
-const getUsers = (req, res) => {
-    pool.query(queries.getUsers, (error, results) => {
-        if (error) {
-            console.error("Error fetching users:", error);
-            res.writeHead(500, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Internal server error" }));
-            return;
-        }
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(results));
-    });
-};*/
+
+const getUsers = async (req, res) => {
+    try {
+        const [users] = await pool.promise().query(`SELECT * FROM users`);
+        
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, users }));  // Ensure response is sent
+    } catch (err) {
+        console.error('Error fetching users:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, message: 'Failed to fetch users' }));
+    }
+};
+
 /*
 const handleSignup = async (req, res) => {
     let body = '';
@@ -176,7 +177,7 @@ const handleLogin = async (req, res) => {
 
 
 module.exports = {
-    /*getUsers,
-    handleSignup,
+    getUsers,
+    /*handleSignup,
     handleLogin,*/
 };
