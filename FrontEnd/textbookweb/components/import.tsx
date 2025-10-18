@@ -107,6 +107,7 @@ export default function ImportButton() {
         >
           {status === "uploading" ? "Importing…" : "Show"}
         </button>
+
       </div>
 
       {fileName && <div>Selected: <b>{fileName}</b></div>}
@@ -116,6 +117,8 @@ export default function ImportButton() {
         </div>
       )}
 
+      
+
       {/* Your viewer blocks (you already have these) */}
       {objectURL && kind === "pdf" && (
         <object data={objectURL} type="application/pdf" className="w-full h-[560px]">
@@ -124,17 +127,41 @@ export default function ImportButton() {
         </object>
       )}
 
-      {objectURL && kind === "svg" && (
-        <img src={objectURL} alt={fileName} className="w-full h-[560px]" />
-      )}
+      {objectURL && (
+        <div className="flex gap-4 items-start justify-center mt-4">
+            {/* Left side: the imported file */}
+            <div className="flex-1 max-w-[75%]">
+            {kind === "pdf" && (
+                <object data={objectURL} type="application/pdf" className="w-full h-[560px]" />
+            )}
+            {kind === "svg" && (
+                <img src={objectURL} alt={fileName} className="w-full h-auto" />
+            )}
+            {kind === "png" && (
+                <img src={objectURL} alt={fileName} className="w-full h-auto" />
+            )}
+            {kind === "video" && (
+                <video src={objectURL} controls className="w-full max-h-[560px]" />
+            )}
+        </div>
 
-      {objectURL && kind === "png" && (
-        <img src={objectURL} alt={fileName} className="w-full h-[560px]" />
-      )}
+        {/* Right side: Convert button + empty box */}
+        <div className="flex flex-col justify-start items-center gap-4">
+        <button
+            onClick={() => console.log("Convert to text clicked!")}
+            className="rounded-xl px-4 py-2 border hover:bg-gray-800 transition"
+        >
+            Convert to text
+        </button>
 
-      {objectURL && kind === "video" && (
-        <video src={objectURL} controls className="w-full max-h-[560px]" />
-      )}
+            {/* Empty box placeholder */}
+            <div className="w-64 h-40 border border-gray-600 rounded-xl bg-black/20 flex items-center justify-center">
+                {/* You can put text or content here later */}
+            </div>
+        </div>
+        </div>
+    )}
     </div>
+    
   );
 }
