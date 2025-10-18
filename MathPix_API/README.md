@@ -27,7 +27,23 @@ pip install -r requirements.txt
 $env:HOST = "0.0.0.0"; $env:PORT = "8000"; uvicorn app:app --host $env:HOST --port $env:PORT --reload
 ```
 
-4. POST an image to `http://localhost:8000/api/ocr/extract` using Postman or curl. The endpoint accepts multipart file upload under the `file` field.
+4. POST an image to `http://localhost:8000/api/ocr/extract` using Postman or curl. The endpoint accepts multipart file upload under the `file` field. The response will be JSON with a convenience `text` field (the extracted plain text) and `raw` containing the full MathPix JSON response.
+
+Example curl:
+
+```powershell
+curl -F "file=@C:\path\to\image.jpg" http://localhost:8000/api/ocr/extract
+```
+
+Example response:
+
+```json
+{
+	"success": true,
+	"text": "x + y = z",
+	"raw": { /* full MathPix response */ }
+}
+```
 
 Notes
 - This is intentionally minimal. For production, add request validation, authentication, rate-limiting, logging, and error handling.
