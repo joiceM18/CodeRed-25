@@ -10,11 +10,15 @@ const cors = require('cors');
 
 
 const map_route = {
-    'GET': ['/getUsers'],
-  'POST': ['/signup',
-            '/login'],
-    'PUT': [],
-    'DELETE': [],
+  'GET': ['/getUsers', '/api/users'],
+  'POST': [
+    '/signup',
+    '/login',
+    '/api/auth/register',
+    '/api/auth/login'
+  ],
+  'PUT': [],
+  'DELETE': [],
 };
 
 
@@ -33,6 +37,23 @@ const server = http.createServer((req, res) => {
   const { pathname } = parsedUrl;
   const method = req.method;
   console.log(`Requested Path: ${pathname}, Method: ${method}`);
+
+  // ---- alias modern API paths to your existing Routes paths (no deletions) ----
+  const key = `${method} ${pathname}`;
+  const aliasMap = {
+    "POST /api/auth/register": "/signup",
+    "POST /api/auth/login": "/login",
+    "GET /api/users": "/getUsers",
+  };
+
+  // If there's an alias, rewrite req.url so your existing Routes can handle it
+  if (aliasMap[key]) {
+    // preserve querystring if any
+    const queryString = parsedUrl.search || "";
+    req.url = aliasMap[key] + queryString;
+    console.log(`Aliased ${key} -> ${req.url}`);
+  }
+
 
   if (pathname === "/") {
       res.writeHead(200, { "Content-Type": "application/json" });

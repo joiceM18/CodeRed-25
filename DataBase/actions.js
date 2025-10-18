@@ -53,10 +53,13 @@ const handleSignup = async (req, res) => {
                 return;
             }
 
-            // Insert new user (password stored in password_hash)
+            // ✅ FIX: hash password before storing
+            const hash = await bcrypt.hash(password, 10);
+
+            // Insert new user
             const [result] = await pool.promise().query(
                 `INSERT INTO Users (username, password_hash, created_at) VALUES (?, ?, NOW())`,
-                [username, password]
+                [username, hash]
             );
 
             const userId = result.insertId;
@@ -83,39 +86,47 @@ const handleLogin = async (req, res) => {
 
     req.on('end', async () => {
         try {
-            const parsedBody = JSON.parse(body);
+            const parsedBody = JSON.parse(body || '{}');
             const { username, password } = parsedBody;
 
             if (!username || !password) {
                 throw new Error('Missing required fields');
             }
 
-            // Check in 'user' table
-            const [user_check] = await pool.promise().query(
-                `SELECT userId, username, password_hash FROM users WHERE username = ? AND password_hash = ?`, [username, password]
+            // ✅ FIX: look up by username only
+            const [rows] = await pool.promise().query(
+                `SELECT userID, username, password_hash FROM Users WHERE username = ? LIMIT 1`,
+                [username]
             );
-            console.log('User Check:', user_check);
 
-            if (user_check.length > 0) {
-                res.writeHead(201, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({
-                    success: true,
-                    userId: user_check[0].uderId,
-                    userName: user_check[0].username,
-                    password: user_check[0].password,
-                    message: "User Account"
-                }));
+            if (!rows.length) {
+                // user not found
+                res.writeHead(401, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ success: false, message: "Invalid credentials" }));
                 return;
             }
 
-            // If the user is not found in any of the tables
-            res.writeHead(404, { "Content-Type": "application/json" });
+            const user = rows[0];
+
+            // ✅ FIX: compare bcrypt hash
+            const ok = await bcrypt.compare(password, user.password_hash);
+            if (!ok) {
+                res.writeHead(401, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ success: false, message: "Invalid credentials" }));
+                return;
+            }
+
+            // ✅ FIX: return clean user object (no password)
+            res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({
-                success: false,
-                message: "Account not found"
+                success: true,
+                userId: user.userID,
+                userName: user.username,
+                message: "User Account"
             }));
-        }
-        catch (err) {
+            return;
+
+        } catch (err) {
             console.error('Error during login:', err);
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, message: err.message || 'Login Failed' }));
