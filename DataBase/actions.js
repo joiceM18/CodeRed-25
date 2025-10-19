@@ -95,7 +95,7 @@ const handleLogin = async (req, res) => {
 
             // ✅ FIX: look up by username only
             const [rows] = await pool.promise().query(
-                `SELECT userID, username, password_hash FROM Users WHERE username = ? LIMIT 1`,
+                `SELECT userID, username, password_hash FROM users WHERE username = ? LIMIT 1`,
                 [username]
             );
 
@@ -117,14 +117,16 @@ const handleLogin = async (req, res) => {
             }
 
             // ✅ FIX: return clean user object (no password)
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({
-                success: true,
-                userId: user.userID,
-                userName: user.username,
-                message: "User Account"
-            }));
-            return;
+                        res.writeHead(200, { "Content-Type": "application/json" });
+                        res.end(JSON.stringify({
+                                success: true,
+                                user: {
+                                    userId: user.userID,
+                                    username: user.username
+                                },
+                                message: "User Account"
+                        }));
+                        return;
 
         } catch (err) {
             console.error('Error during login:', err);
@@ -175,9 +177,41 @@ const handleRetrieveTextbook = async (req, res) => {
  * @param {boolean} [params.is_public=true]
  * @returns {Promise<number>} inserted textbookID
  */
+const { uploadToAzureBlobFromServer } = require("./azure");
+const { Buffer } = require("buffer");
+
 async function addTextbook({ textbook_input, textbook_output, subject, userID, is_public = true }) {
+    // If input/output are base64, upload to Azure and use the returned URLs
+    let inputUrl = textbook_input;
+    let outputUrl = textbook_output;
+
+    // Helper: check if string is base64 (simple check)
+    function isBase64(str) {
+        return typeof str === "string" && /^data:.*;base64,/.test(str);
+    }
+
+    if (isBase64(textbook_input)) {
+        // Extract mime and data
+        const matches = textbook_input.match(/^data:(.*);base64,(.*)$/);
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const ext = mimeType.split("/")[1] || "bin";
+        const fileName = `input_${Date.now()}_${Math.floor(Math.random()*10000)}.${ext}`;
+        const buffer = Buffer.from(base64Data, "base64");
+        inputUrl = await uploadToAzureBlobFromServer(buffer, fileName, mimeType);
+    }
+    if (isBase64(textbook_output)) {
+        const matches = textbook_output.match(/^data:(.*);base64,(.*)$/);
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const ext = mimeType.split("/")[1] || "bin";
+        const fileName = `output_${Date.now()}_${Math.floor(Math.random()*10000)}.${ext}`;
+        const buffer = Buffer.from(base64Data, "base64");
+        outputUrl = await uploadToAzureBlobFromServer(buffer, fileName, mimeType);
+    }
+
     const sql = `INSERT INTO textbooks (textbook_input, textbook_output, subject, is_public, userID) VALUES (?, ?, ?, ?, ?)`;
-    const values = [textbook_input, textbook_output, subject, is_public, userID];
+    const values = [inputUrl, outputUrl, subject, is_public, userID];
     const [result] = await pool.promise().query(sql, values);
     return result.insertId;
 }

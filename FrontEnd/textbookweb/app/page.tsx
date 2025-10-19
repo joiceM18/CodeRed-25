@@ -1,13 +1,20 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import SignupModal from "./SignupModal";
+import { setUser, clearUser } from "../lib/userStore";
 
+<<<<<<< HEAD
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5000";
+=======
+const API_BASE = "https://codered-25.onrender.com";
+// const API_BASE = "/api"; 
+>>>>>>> d33382bfa5d67b7fbafe3f39f46f5ec07249360a
 
-export default function LoginPage() {
+export default function HomePage() {
   const router = useRouter();
+
 
   // form state
   const [username, setUsername] = useState("");
@@ -44,19 +51,25 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
+      console.log("[Login] Response status:", res.status);
+      console.log("[Login] Response data:", data);
 
       if (res.ok) {
-        const { customer_id, name, username: em, phone } = data.user ?? {};
-        localStorage.setItem(
-          "user",
-          JSON.stringify({ customer_id, name, username: em, phone })
-        );
+        // Try to extract userId and username from response
+        const user = data.user ?? {};
+        console.log("[Login] user object:", user);
+        // Accepts userID, userId, customer_id, username
+        const userId = user.userID || user.userId || user.customer_id;
+        const usernameVal = user.username || user.name || "";
+        if (userId && usernameVal) {
+          setUser({ userId, username: usernameVal, password });
+        }
         router.push("/import");
       } else {
         setError(data.error || "Login failed. Please try again.");
       }
     } catch (err) {
-      console.error(err);
+      console.error("[Login] Exception:", err);
       setError("Something went wrong. Check console for details.");
     }
   }

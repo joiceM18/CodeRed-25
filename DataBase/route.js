@@ -20,7 +20,7 @@ async function routes(req, res) {
         return actions.handleLogin(req, res);
     }
 
-    if (URL.startsWith('/retrieveTextbook') && method === 'POST') {
+    if ((URL.startsWith('/retrieveTextbook') || URL.startsWith('/api/textbook/retrieve')) && method === 'POST') {
         return actions.handleRetrieveTextbook(req, res);
     }
 

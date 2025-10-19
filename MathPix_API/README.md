@@ -27,12 +27,14 @@ pip install -r requirements.txt
 $env:HOST = "0.0.0.0"; $env:PORT = "8000"; uvicorn app:app --host $env:HOST --port $env:PORT --reload
 ```
 
-4. POST an image to `http://localhost:8000/api/ocr/extract` using Postman or curl. The endpoint accepts multipart file upload under the `file` field. The response will be JSON with a convenience `text` field (the extracted plain text) and `raw` containing the full MathPix JSON response.
+4. POST an image to `http://localhost:8000/api/ocr/extract` (local) using Postman or curl. When deployed (e.g., Render), replace `http://localhost:8000` with your hosted URL, such as `https://<your-service>.onrender.com/api/ocr/extract`. The endpoint accepts multipart file upload under the `file` field. The response will be JSON with a convenience `text` field (the extracted plain text) and `raw` containing the full MathPix JSON response.
 
 Example curl:
 
 ```powershell
 curl -F "file=@C:\path\to\image.jpg" http://localhost:8000/api/ocr/extract
+# Hosted example
+# curl -F "file=@C:\path\to\image.jpg" https://<your-service>.onrender.com/api/ocr/extract
 ```
 
 Example response:
@@ -69,5 +71,7 @@ Response: image/png binary data.
 Example using PowerShell:
 ```powershell
 Invoke-RestMethod -Uri http://localhost:8000/api/render/image -Method Post -ContentType 'application/json' -Body (ConvertTo-Json @{ text = Get-Content 'C:\path\to\file.txt' -Raw; font_size = 24 }) -OutFile out.png
+# Hosted example
+# Invoke-RestMethod -Uri https://<your-service>.onrender.com/api/render/image -Method Post -ContentType 'application/json' -Body (ConvertTo-Json @{ text = Get-Content 'C:\path\to\file.txt' -Raw; font_size = 24 }) -OutFile out.png
 ```
 <!-- PDF support removed: PNG rendering is the canonical output. -->

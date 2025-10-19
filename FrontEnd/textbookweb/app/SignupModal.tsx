@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { setUser } from "../lib/userStore";
 
 type Props = {
   onClose: () => void;
@@ -30,7 +31,13 @@ export default function SignupModal({ onClose, onSuccess, setError, apiBase }: P
       });
       const data = await res.json();
       if (res.ok) {
-        localStorage.setItem("user", JSON.stringify(data.user));
+        // Accepts userID, userId, customer_id, username
+        const user = data.user ?? {};
+        const userId = user.userID || user.userId || user.customer_id;
+        const usernameVal = user.username || user.name || form.username;
+        if (userId && usernameVal) {
+          setUser({ userId, username: usernameVal, password: form.password });
+        }
         onSuccess();
         onClose();
       } else {

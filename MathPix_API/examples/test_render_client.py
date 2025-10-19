@@ -12,7 +12,8 @@ import requests
 import base64
 import os
 
-SERVER_URL = os.environ.get('RENDER_SERVER', 'http://localhost:8000')
+# Prefer hosted URL if provided; fall back to localhost for local testing
+SERVER_URL = os.environ.get('RENDER_SERVER') or os.environ.get('MATHPIX_BACKEND_URL') or 'http://localhost:8000'
 ENDPOINT = f"{SERVER_URL}/api/render/image"
 
 PAYLOAD = {

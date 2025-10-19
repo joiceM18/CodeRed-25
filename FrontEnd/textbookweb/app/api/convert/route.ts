@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const BACKEND = process.env.MATHPIX_BACKEND_URL || "http://localhost:8000";
+// Hardcoded hosted FastAPI (MathPix_API) base URL
+const BACKEND = "https://codered-25-webporoject.onrender.com";
 
 export async function POST(req: Request) {
   try {
+    // BACKEND is hardcoded; no env setup required
     const form = await req.formData();
     const file = form.get("file");
     const fontFamily = (form.get("fontFamily") as string) || undefined;
