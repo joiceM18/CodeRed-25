@@ -7,9 +7,11 @@ import { fetchTextbooks, type TextbookRow } from "@/lib/fetchTextbooks";
 import { getUser } from "@/lib/userStore";
 
 
+
 export default function ProfilePage() {
   const router = useRouter();
   const [userID, setUserID] = useState<number | null>(null);
+  const [username, setUsername] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
   const [items, setItems] = useState<TextbookRow[]>([]);
@@ -19,8 +21,13 @@ export default function ProfilePage() {
     if (typeof window !== "undefined") {
       const user = getUser();
       console.log("[ProfilePage] getUser() result:", user);
-      if (user && user.userId) setUserID(Number(user.userId));
-      else setUserID(null);
+      if (user && user.userId) {
+        setUserID(Number(user.userId));
+        setUsername(user.username || "");
+      } else {
+        setUserID(null);
+        setUsername("");
+      }
       setLoading(false);
     }
   }, []);
@@ -114,14 +121,14 @@ export default function ProfilePage() {
       <header className="mx-auto max-w-7xl px-6 pt-10">
         <div className="flex items-start justify-between">
           <h1 className="text-3xl font-semibold tracking-tight">
-            <span className="text-[#ffd700]">Textify</span> • My Profile
+            <span className="text-[#ffd700]">Textify</span> • {username ? `${username}'s Profile` : "Profile"}
           </h1>
           {/* initials badge */}
           <div
             aria-label="User initials"
-            className="h-12 w-12 rounded-full border border-neutral-700/80 grid place-items-center text-sm font-medium text-neutral-200 bg-neutral-900/60 shadow-[0_0_15px_rgba(255,215,0,0.15)]"
+            className="h-12 w-12 rounded-full border border-neutral-700/80 grid place-items-center text-2xl font-bold text-neutral-200 bg-neutral-900/60 shadow-[0_0_15px_rgba(255,215,0,0.15)]"
           >
-            DS
+            {username ? username[0].toUpperCase() : "?"}
           </div>
         </div>
       </header>
