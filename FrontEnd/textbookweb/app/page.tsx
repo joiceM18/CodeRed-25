@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import SignupModal from "./SignupModal";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5000";
-// const API_BASE = "/api"; 
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,8 +36,6 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
 
-    console.log("🖱️ Login button clicked");
-
     try {
       const res = await fetch(`${API_BASE}/login`, {
         method: "POST",
@@ -64,21 +61,29 @@ export default function LoginPage() {
     }
   }
 
-  function handleCreateAccountClick() {
-    console.log("🖱️ Create Account button clicked");
-    setShowSignup(true);
-  }
-
   return (
-    <main
-      className="min-h-screen bg-[url('/images/libpic1.jpg')] bg-cover bg-center bg-no-repeat relative"
-      aria-label="Login page"
-    >
-      <div className="absolute inset-0 bg-black/60"></div>
+    <main className="relative min-h-screen text-white overflow-hidden" aria-label="Login page">
+      {/* 🎬 Background video */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover"
+      >
+        <source src="/videos/backgroundVideo.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
 
+      {/* dark overlay */}
+      <div className="absolute inset-0 bg-black/60" />
+
+      {/* page content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
-        <div className="w-full max-w-md text-center rounded-2xl p-8 shadow-[0_0_35px_rgba(255,215,0,0.25)] bg-black/60 text-white">
-          <h1 className="text-3xl font-semibold text-[#ffd700]">Textify</h1>
+        <div className="w-full max-w-md text-center rounded-2xl p-8 bg-black/60 text-white border border-white/10 shadow-[0_0_35px_rgba(167,139,250,0.25)]">
+          <h1 className="text-3xl font-semibold text-purple-300 drop-shadow-[0_0_10px_rgba(167,139,250,0.35)]">
+            Textify
+          </h1>
           <p className="mt-1 text-sm text-neutral-300">
             Sign in to access your accessible study digital library
           </p>
@@ -92,7 +97,7 @@ export default function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="w-full rounded-lg bg-neutral-900 text-white placeholder:text-neutral-400 border border-neutral-700 focus:border-[#ffd700] focus:outline-none px-4 py-3"
+              className="w-full rounded-lg bg-neutral-900 text-white placeholder:text-neutral-400 border border-neutral-700 focus:border-purple-400 focus:outline-none px-4 py-3"
               placeholder="johndoe"
             />
 
@@ -102,13 +107,13 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full rounded-lg bg-neutral-900 text-white placeholder:text-neutral-400 border border-neutral-700 focus:border-[#ffd700] focus:outline-none px-4 py-3"
+              className="w-full rounded-lg bg-neutral-900 text-white placeholder:text-neutral-400 border border-neutral-700 focus:border-purple-400 focus:outline-none px-4 py-3"
               placeholder="********"
             />
 
             <button
               type="submit"
-              className="mt-6 w-full rounded-lg bg-[#ffd700] text-black font-semibold py-3 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transition cursor-pointer"
+              className="mt-6 w-full rounded-lg bg-[#c084fc] text-black font-semibold py-3 shadow-[0_0_25px_rgba(192,132,252,0.4)] hover:shadow-[0_0_35px_rgba(192,132,252,0.6)] transition cursor-pointer"
             >
               Login
             </button>
@@ -117,8 +122,8 @@ export default function LoginPage() {
           <p className="mt-4 text-sm">
             New to Textify?{" "}
             <button
-              onClick={handleCreateAccountClick}
-              className="text-[#e6c200] hover:underline outline-none focus-visible:underline cursor-pointer"
+              onClick={() => setShowSignup(true)}
+              className="text-purple-300 hover:underline outline-none focus-visible:underline cursor-pointer"
             >
               Create an account
             </button>
