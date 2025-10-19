@@ -211,12 +211,12 @@ export default function ProfilePage() {
 
         {/* actions */}
         <div className="mt-10 flex flex-wrap gap-3">
-          <Link
-            href="/import"
-            className="rounded-lg bg-[#c084fc] px-4 py-2 text-black text-sm font-semibold shadow-[0_0_18px_rgba(192,132,252,0.35)] hover:bg-[#d8b4fe] hover:shadow-[0_0_28px_rgba(192,132,252,0.55)] transition"
-          >
-            Import Image
+          <Link href="/import" passHref legacyBehavior>
+            <a className="cursor-pointer rounded-lg bg-[#c084fc] px-4 py-2 text-black text-sm font-semibold hover:bg-[#d8b4fe]">
+              Import Image
+            </a>
           </Link>
+
           <Link
             href="/"
             className="rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm text-neutral-200 hover:bg-white/10 transition"

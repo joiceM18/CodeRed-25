@@ -145,6 +145,7 @@ export default function Home() {
           <div className="absolute right-6 top-6 sm:right-8 sm:top-8">
             <Link
               href="/profile"
+              style={{ cursor: 'pointer' }}
               className="rounded-lg bg-[#c084fc] hover:bg-[#d8b4fe] px-4 py-2 text-black text-sm font-semibold shadow-[0_0_18px_rgba(192,132,252,0.35)] transition"
             >
               Go to Profile
@@ -177,7 +178,7 @@ export default function Home() {
                   className="max-h-full max-w-full object-contain rounded-md"
                 />
               ) : (
-                <div className="text-sm text-neutral-400">No file yet. Click “Import”.</div>
+                <div className="text-sm text-neutral-400">No file yet. Click "Import".</div>
               )}
             </div>
           </div>
@@ -195,6 +196,7 @@ export default function Home() {
               <label className="col-span-2 text-sm text-neutral-300">
                 Font family
                 <select
+                  style={{ cursor: 'pointer' }}
                   className="mt-1 w-full rounded-lg border border-purple-500/50 bg-neutral-900 px-3 py-2 outline-none focus:border-purple-400"
                   value={fontFamily}
                   onChange={(e) => setFontFamily(e.target.value)}
@@ -212,7 +214,8 @@ export default function Home() {
                 <input
                   type="file"
                   accept=".ttf,.otf"
-                  className="mt-1 w-full rounded-lg border border-purple-500/40 bg-neutral-900 px-3 py-2 ..."
+                  style={{ cursor: 'pointer' }}
+                  className="mt-1 w-full rounded-lg border border-purple-500/40 bg-neutral-900 px-3 py-2 outline-none focus:border-purple-400"
                   onChange={(e) => setCustomTtfFile(e.target.files?.[0] ?? null)}
                 />
               </label>
@@ -222,7 +225,7 @@ export default function Home() {
                 <input
                   type="number"
                   min={8}
-                  // ...
+                  className="mt-1 w-full rounded-lg border border-purple-500/40 bg-neutral-900 px-3 py-2 outline-none focus:border-purple-400"
                   value={fontSize}
                   onChange={(e) => setFontSize(e.target.value)}
                 />
@@ -232,6 +235,7 @@ export default function Home() {
                 <button
                   onClick={handleConvert}
                   disabled={busy || !previewSrc}
+                  style={{ cursor: 'pointer' }}
                   className="w-full rounded-lg bg-[#c084fc] px-4 py-2 font-semibold text-black transition hover:bg-[#d8b4fe] shadow-[0_0_22px_rgba(192,132,252,0.45)] disabled:opacity-60"
                 >
                   {busy ? "Converting…" : "Convert to text"}
@@ -251,7 +255,7 @@ export default function Home() {
                       className="max-h-full max-w-full object-contain rounded-md"
                     />
                   ) : (
-                    <div className="text-sm text-neutral-400">Nothing rendered yet. Click “Convert to text”.</div>
+                    <div className="text-sm text-neutral-400">Nothing rendered yet. Click "Convert to text".</div>
                   )}
                 </div>
               </div>
@@ -280,6 +284,7 @@ export default function Home() {
                 <button
                   onClick={handleSave}
                   disabled={saveStatus === "saving"}
+                  style={{ cursor: 'pointer' }}
                   className="rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm text-neutral-200 backdrop-blur-sm hover:bg-white/15 disabled:opacity-60"
                 >
                   {saveStatus === "saving" ? "Saving…" : "Save to Library"}

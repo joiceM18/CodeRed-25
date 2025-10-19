@@ -33,3 +33,22 @@ body {
 .animate-slow-pulse {
   animation: slow-pulse 30 ease-in-out infinite;
 }
+
+
+
+
+button,
+a,
+[role="button"] {
+  cursor: crosshair;
+}
+
+button,
+a,
+select,
+input[type="file"],
+input[type="submit"],
+input[type="button"],
+[role="button"] {
+  cursor: pointer !important;
+}

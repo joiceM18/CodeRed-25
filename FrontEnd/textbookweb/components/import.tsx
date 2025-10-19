@@ -26,7 +26,7 @@ export default function ImportButton({ onPreview }: Props) {
     <div className="flex items-center gap-3">
       <button
         onClick={openPicker}
-        className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm text-neutral-200 hover:bg-white/10"
+        className="cursor-pointer rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm text-neutral-200 hover:bg-white/10"
       >
         Import
       </button>
