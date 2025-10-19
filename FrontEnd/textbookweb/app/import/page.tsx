@@ -9,10 +9,10 @@ import { getUser } from "@/lib/userStore";
 export default function Home() {
   // LEFT: preview (data URL produced by ImportButton)
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   // RIGHT: convert controls + result
   const [fontFamily, setFontFamily] = useState("Times New Roman (times)");
-  //const [customTtf, setCustomTtf] = useState("");
   const [customTtfFile, setCustomTtfFile] = useState<File | null>(null);
   const [fontSize, setFontSize] = useState<string>("");
   const [renderedImage, setRenderedImage] = useState<string | null>(null);
@@ -99,7 +99,6 @@ export default function Home() {
         subject,
         userID,
         is_public: true,
-        // if your backend supports keywords:
         keywords,
       });
 
@@ -129,6 +128,29 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(transparent,rgba(0,0,0,0.6))]" />
       </div>
 
+      {/* Lightbox Modal */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
+          onClick={() => setLightboxImage(null)}
+          style={{ cursor: 'pointer' }}
+        >
+          <button
+            onClick={() => setLightboxImage(null)}
+            className="absolute top-4 right-4 text-white text-4xl font-light hover:text-purple-300 transition"
+            style={{ cursor: 'pointer' }}
+          >
+            ×
+          </button>
+          <img
+            src={lightboxImage}
+            alt="Fullscreen preview"
+            className="max-h-[90vh] max-w-[90vw] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       {/* header + top-right profile */}
       <header className="relative z-10 px-6 pt-10 sm:pt-16">
         <div className="mx-auto flex w-full max-w-7xl items-start">
@@ -145,7 +167,6 @@ export default function Home() {
           <div className="absolute right-6 top-6 sm:right-8 sm:top-8">
             <Link
               href="/profile"
-              style={{ cursor: 'pointer' }}
               className="rounded-lg bg-[#c084fc] hover:bg-[#d8b4fe] px-4 py-2 text-black text-sm font-semibold shadow-[0_0_18px_rgba(192,132,252,0.35)] transition"
             >
               Go to Profile
@@ -175,7 +196,9 @@ export default function Home() {
                 <img
                   src={previewSrc}
                   alt="Selected preview"
-                  className="max-h-full max-w-full object-contain rounded-md"
+                  className="max-h-full max-w-full object-contain rounded-md hover:opacity-90 transition"
+                  onClick={() => setLightboxImage(previewSrc)}
+                  style={{ cursor: 'pointer' }}
                 />
               ) : (
                 <div className="text-sm text-neutral-400">No file yet. Click "Import".</div>
@@ -196,7 +219,6 @@ export default function Home() {
               <label className="col-span-2 text-sm text-neutral-300">
                 Font family
                 <select
-                  style={{ cursor: 'pointer' }}
                   className="mt-1 w-full rounded-lg border border-purple-500/50 bg-neutral-900 px-3 py-2 outline-none focus:border-purple-400"
                   value={fontFamily}
                   onChange={(e) => setFontFamily(e.target.value)}
@@ -214,7 +236,6 @@ export default function Home() {
                 <input
                   type="file"
                   accept=".ttf,.otf"
-                  style={{ cursor: 'pointer' }}
                   className="mt-1 w-full rounded-lg border border-purple-500/40 bg-neutral-900 px-3 py-2 outline-none focus:border-purple-400"
                   onChange={(e) => setCustomTtfFile(e.target.files?.[0] ?? null)}
                 />
@@ -235,7 +256,6 @@ export default function Home() {
                 <button
                   onClick={handleConvert}
                   disabled={busy || !previewSrc}
-                  style={{ cursor: 'pointer' }}
                   className="w-full rounded-lg bg-[#c084fc] px-4 py-2 font-semibold text-black transition hover:bg-[#d8b4fe] shadow-[0_0_22px_rgba(192,132,252,0.45)] disabled:opacity-60"
                 >
                   {busy ? "Converting…" : "Convert to text"}
@@ -252,7 +272,9 @@ export default function Home() {
                     <img
                       src={renderedImage}
                       alt="Rendered"
-                      className="max-h-full max-w-full object-contain rounded-md"
+                      className="max-h-full max-w-full object-contain rounded-md hover:opacity-90 transition"
+                      onClick={() => setLightboxImage(renderedImage)}
+                      style={{ cursor: 'pointer' }}
                     />
                   ) : (
                     <div className="text-sm text-neutral-400">Nothing rendered yet. Click "Convert to text".</div>
@@ -284,7 +306,6 @@ export default function Home() {
                 <button
                   onClick={handleSave}
                   disabled={saveStatus === "saving"}
-                  style={{ cursor: 'pointer' }}
                   className="rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm text-neutral-200 backdrop-blur-sm hover:bg-white/15 disabled:opacity-60"
                 >
                   {saveStatus === "saving" ? "Saving…" : "Save to Library"}
