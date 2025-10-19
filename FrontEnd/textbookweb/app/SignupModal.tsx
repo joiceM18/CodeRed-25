@@ -88,7 +88,7 @@ export default function SignupModal({ onClose, onSuccess, setError, apiBase }: P
           <button
             onClick={handleSignupClick}
             disabled={busy}
-            className="flex-1 rounded-lg bg-[#ffd900dc] text-black font-semibold py-3 cursor-pointer disabled:opacity-50 hover:bg-[#ffd900] transition"
+            className="flex-1 rounded-lg bg-[#c084fc] text-black font-semibold py-3 cursor-pointer disabled:opacity-50 hover:bg-[#d8b4fe] transition"
           >
             {busy ? "Creating..." : "Sign up"}
           </button>
