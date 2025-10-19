@@ -50,7 +50,7 @@ export default function LoginPage() {
       if (res.ok) {
         const { customer_id, name, username: em, phone } = data.user ?? {};
         localStorage.setItem("user", JSON.stringify({ customer_id, name, username: em, phone }));
-        router.push("/customer-dashboard"); // update route as needed
+        router.push("/import"); // update route as needed
       } else {
         setError(data.error || "Login failed. Please try again.");
       }
