@@ -2,10 +2,20 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const BACKEND = process.env.MATHPIX_BACKEND_URL || "http://localhost:8000";
+// Use hosted MathPix backend when configured; fall back to localhost in development only
+const BACKEND =
+  process.env.MATHPIX_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_MATHPIX_BACKEND_URL ||
+  (process.env.NODE_ENV === "production" ? "" : "http://localhost:8000");
 
 export async function POST(req: Request) {
   try {
+    if (!BACKEND) {
+      return new NextResponse(
+        "MATHPIX_BACKEND_URL is not set. Please configure your hosted MathPix API base URL.",
+        { status: 500 }
+      );
+    }
     const form = await req.formData();
     const file = form.get("file");
     const fontFamily = (form.get("fontFamily") as string) || undefined;
