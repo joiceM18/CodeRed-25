@@ -5,12 +5,8 @@ import { useRouter } from "next/navigation";
 import SignupModal from "./SignupModal";
 import { setUser, clearUser } from "../lib/userStore";
 
-<<<<<<< HEAD
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5000";
-=======
 const API_BASE = "https://codered-25.onrender.com";
-// const API_BASE = "/api"; 
->>>>>>> d33382bfa5d67b7fbafe3f39f46f5ec07249360a
+// const API_BASE = "/api";
 
 export default function HomePage() {
   const router = useRouter();
