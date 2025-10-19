@@ -5,6 +5,7 @@ import { saveTextbook } from "../lib/saveTextbook";
 // components/ImportButton.tsx
 
 import { useRef, useState, useEffect } from "react";
+import Link from "next/link";
 
 type Kind = "pdf" | "svg" | "video" | "png" |null;
 
@@ -311,8 +312,17 @@ export default function ImportButton() {
             )}
         </div>
         </div>
-    )}
+      )}
+
+      {/* Go to Profile button */}
+      <div className="mt-6 flex justify-end">
+        <Link
+          href="/profile"
+          className="rounded-lg bg-[#ffd700] px-4 py-2 text-black text-sm font-semibold shadow hover:shadow-lg transition"
+        >
+          Go to Profile
+        </Link>
+      </div>
     </div>
-    
   );
 }

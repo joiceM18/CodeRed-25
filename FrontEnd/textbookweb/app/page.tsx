@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import SignupModal from "./SignupModal";
+import { setUser } from "../lib/userStore";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5000";
 // const API_BASE = "/api"; 
@@ -49,11 +50,14 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        const { customer_id, name, username: em, phone } = data.user ?? {};
-        localStorage.setItem(
-          "user",
-          JSON.stringify({ customer_id, name, username: em, phone })
-        );
+        // Try to extract userId and username from response
+        const user = data.user ?? {};
+        // Accepts userID, userId, customer_id, username
+        const userId = user.userID || user.userId || user.customer_id;
+        const usernameVal = user.username || user.name || "";
+        if (userId && usernameVal) {
+          setUser({ userId, username: usernameVal, password });
+        }
         router.push("/import");
       } else {
         setError(data.error || "Login failed. Please try again.");

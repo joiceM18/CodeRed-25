@@ -117,14 +117,16 @@ const handleLogin = async (req, res) => {
             }
 
             // ✅ FIX: return clean user object (no password)
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({
-                success: true,
-                userId: user.userID,
-                userName: user.username,
-                message: "User Account"
-            }));
-            return;
+                        res.writeHead(200, { "Content-Type": "application/json" });
+                        res.end(JSON.stringify({
+                                success: true,
+                                user: {
+                                    userId: user.userID,
+                                    username: user.username
+                                },
+                                message: "User Account"
+                        }));
+                        return;
 
         } catch (err) {
             console.error('Error during login:', err);

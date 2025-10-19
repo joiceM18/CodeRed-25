@@ -2,22 +2,43 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { fetchTextbooks, type TextbookRow } from "@/lib/fetchTextbooks";
+import { getUser } from "@/lib/userStore";
 
 export default function ProfilePage() {
-  // Testing: hardcode userID to 1
-  const [userID] = useState<number>(1);
+  const router = useRouter();
+  // Use userStore to get userId
+  const [userID, setUserID] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [items, setItems] = useState<TextbookRow[]>([]);
 
   useEffect(() => {
+    // Get userId from localStorage via userStore
+    const user = getUser();
+    console.log("[ProfilePage] getUser() result:", user);
+    if (user && user.userId) setUserID(Number(user.userId));
+    else setUserID(null);
+  }, []);
+
+  useEffect(() => {
+    // If not logged in, redirect to login after a short delay
+    if (userID === null) {
+      console.log("[ProfilePage] No userID detected, redirecting to login...");
+      setTimeout(() => {
+        router.push("/");
+      }, 1200);
+    }
+  }, [userID, router]);
+
+  useEffect(() => {
+    if (!userID) return;
     const run = async () => {
-      const id = userID; // hardcoded to 1 for testing
       setLoading(true);
       setError("");
       try {
-        const resp = await fetchTextbooks(id);
+        const resp = await fetchTextbooks(userID);
         if (resp.success && Array.isArray(resp.textbooks)) {
           setItems(resp.textbooks);
         } else {
@@ -108,7 +129,10 @@ export default function ProfilePage() {
       {/* content */}
       <div className="mx-auto max-w-7xl px-6 pb-16">
         {/* status */}
-        {loading && (
+        {!userID && (
+          <div className="mt-6 text-sm text-red-400">Not logged in. Please sign in to view your textbooks.</div>
+        )}
+        {loading && userID && (
           <div className="mt-6 text-sm text-neutral-300">Loading textbooks…</div>
         )}
         {error && (
@@ -116,7 +140,7 @@ export default function ProfilePage() {
         )}
 
         {/* textbooks grid */}
-        {grid}
+        {userID && grid}
 
         {/* footer buttons */}
         <div className="mt-10 flex flex-wrap gap-3">
