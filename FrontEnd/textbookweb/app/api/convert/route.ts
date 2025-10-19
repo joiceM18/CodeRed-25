@@ -7,7 +7,6 @@ const BACKEND = "https://codered-25-webporoject.onrender.com";
 
 export async function POST(req: Request) {
   try {
-    // BACKEND is hardcoded; no env setup required
     const form = await req.formData();
     const file = form.get("file");
     const fontFamily = (form.get("fontFamily") as string) || undefined;
@@ -19,7 +18,7 @@ export async function POST(req: Request) {
       return new NextResponse("Missing file", { status: 400 });
     }
 
-    // 1) OCR: forward the image file to Python backend
+    // 1️⃣ OCR: forward the image/pdf file to your backend
     const ocrForm = new FormData();
     ocrForm.set("file", file, file.name);
 
@@ -27,17 +26,23 @@ export async function POST(req: Request) {
       method: "POST",
       body: ocrForm,
     });
+
     if (!ocrRes.ok) {
       const err = await ocrRes.text();
       return new NextResponse(`OCR failed: ${err}`, { status: ocrRes.status });
     }
+
     const ocrJson = await ocrRes.json();
     const text = (ocrJson?.text as string) || "";
+
+    // ✅ Print extracted text to the console
+    console.log("🟣 Extracted text from OCR:", text);
+
     if (!text) {
       return new NextResponse("No text extracted", { status: 502 });
     }
 
-    // 2) Render: send text + settings to Python backend, request JSON response
+    // 2️⃣ Render: send text + settings to Python backend, request JSON response
     const renderBody = {
       text,
       simple,
@@ -56,15 +61,23 @@ export async function POST(req: Request) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(renderBody),
     });
+
     if (!renderRes.ok) {
       const err = await renderRes.text();
       return new NextResponse(`Render failed: ${err}`, { status: renderRes.status });
     }
 
-    // Expect JSON: { image_base64, analysis: { subject, keywords } }
     const renderJson = await renderRes.json();
-    return NextResponse.json(renderJson, { status: 200, headers: { "Cache-Control": "no-store" } });
+
+    // Optionally also log the subject & keywords
+    console.log("🟢 Render analysis:", renderJson?.analysis);
+
+    return NextResponse.json(renderJson, {
+      status: 200,
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (e: any) {
+    console.error("❌ /api/convert error:", e);
     return new NextResponse(e?.message ?? "Server error", { status: 500 });
   }
 }
