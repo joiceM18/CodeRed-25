@@ -1,17 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import ImportButton from "@/components/import";
+import { saveTextbook } from "@/lib/saveTextbook";
+import { getUser } from "@/lib/userStore";
 
-/**
- * Left: Import & Preview (dataURL from ImportButton)
- * Right: Convert via your /api/convert and show rendered image (base64 -> dataURL)
- */
 export default function Home() {
-  // LEFT (image preview as data URL)
+  // LEFT: preview (data URL produced by ImportButton)
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
 
-  // RIGHT (convert controls + result)
+  // RIGHT: convert controls + result
   const [fontFamily, setFontFamily] = useState("Times New Roman (times)");
   const [customTtf, setCustomTtf] = useState("");
   const [fontSize, setFontSize] = useState<number | "">("");
@@ -19,14 +18,31 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  // helper: turn dataURL from left pane into a File for the API
-  async function dataUrlToFile(dataUrl: string, name = "upload.png"): Promise<File> {
+  // Meta + save
+  const [subject, setSubject] = useState("general");
+  const [keywords, setKeywords] = useState("can, can you, div, solve, you");
+  const [userID, setUserID] = useState<number | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveMsg, setSaveMsg] = useState("");
+
+  useEffect(() => {
+    const u = getUser?.();
+    if (u?.userId) setUserID(Number(u.userId));
+  }, []);
+
+  // helpers
+  async function dataUrlToFile(dataUrl: string, name = "source.png"): Promise<File> {
     const res = await fetch(dataUrl);
     const blob = await res.blob();
     const type = blob.type || "image/png";
     return new File([blob], name, { type });
   }
 
+  function stripDataUrlPrefix(dataUrl: string) {
+    return dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
+  }
+
+  // Convert (RIGHT)
   async function handleConvert() {
     if (!previewSrc) {
       setErr("Please import a file on the left first.");
@@ -37,8 +53,8 @@ export default function Home() {
     setRenderedImage(null);
 
     try {
-      // Build the multipart body from the left preview
       const file = await dataUrlToFile(previewSrc, "source.png");
+
       const form = new FormData();
       form.set("file", file);
       form.set("fontFamily", fontFamily);
@@ -48,21 +64,53 @@ export default function Home() {
       form.set("simple", "false");
 
       const res = await fetch("/api/convert", { method: "POST", body: form });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Convert failed");
-      }
+      if (!res.ok) throw new Error((await res.text()) || "Convert failed");
 
       const data = await res.json();
       const base64 = data?.image_base64 as string | undefined;
       if (!base64) throw new Error("No image returned from convert API.");
-
       setRenderedImage(`data:image/png;base64,${base64}`);
     } catch (e: any) {
       console.error(e);
       setErr(e?.message || "Conversion failed. Please try again.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  // Save to Library (RIGHT)
+  async function handleSave() {
+    try {
+      if (!userID) throw new Error("Not logged in.");
+      if (!previewSrc || !renderedImage) throw new Error("Nothing to save yet.");
+      if (!subject.trim()) throw new Error("Subject is required.");
+
+      setSaveStatus("saving");
+      setSaveMsg("");
+
+      const inputBase64 = stripDataUrlPrefix(previewSrc);
+      const outputBase64 = stripDataUrlPrefix(renderedImage);
+
+      const resp = await saveTextbook({
+        textbook_input: inputBase64,
+        textbook_output: outputBase64,
+        subject,
+        userID,
+        is_public: true,
+        // if your backend supports keywords:
+        keywords,
+      });
+
+      if (resp?.success) {
+        setSaveStatus("saved");
+        setSaveMsg(`Saved! textbookID: ${resp.textbookID}`);
+      } else {
+        setSaveStatus("error");
+        setSaveMsg(resp?.message || "Failed to save textbook.");
+      }
+    } catch (e: any) {
+      setSaveStatus("error");
+      setSaveMsg(e?.message || "Failed to save textbook.");
     }
   }
 
@@ -79,14 +127,28 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(transparent,rgba(0,0,0,0.6))]" />
       </div>
 
-      {/* header */}
-      <header className="relative z-10 flex flex-col items-center text-center px-6 pt-10 sm:pt-16">
-        <h1 className="text-5xl sm:text-6xl font-bold tracking-tight text-purple-300 drop-shadow-[0_0_10px_rgba(167,139,250,0.30)]">
-          Import Your Data
-        </h1>
-        <p className="mt-3 text-base sm:text-lg text-neutral-300 max-w-2xl">
-          Upload and transform your files with ease. Support for CSV, Excel, and more.
-        </p>
+      {/* header + top-right profile */}
+      <header className="relative z-10 px-6 pt-10 sm:pt-16">
+        <div className="mx-auto flex w-full max-w-7xl items-start">
+          <div className="flex-1 text-center">
+            <h1 className="text-5xl sm:text-6xl font-bold tracking-tight text-purple-300 drop-shadow-[0_0_10px_rgba(167,139,250,0.30)]">
+              Import Your Data
+            </h1>
+            <p className="mt-3 text-base sm:text-lg text-neutral-300 max-w-2xl mx-auto">
+              Upload and transform your files with ease. Support for CSV, Excel, and more.
+            </p>
+          </div>
+
+          {/* top-right purple button */}
+          <div className="absolute right-6 top-6 sm:right-8 sm:top-8">
+            <Link
+              href="/profile"
+              className="rounded-lg bg-[#c084fc] hover:bg-[#d8b4fe] px-4 py-2 text-black text-sm font-semibold shadow-[0_0_18px_rgba(192,132,252,0.35)] transition"
+            >
+              Go to Profile
+            </Link>
+          </div>
+        </div>
       </header>
 
       {/* two equal cards */}
@@ -105,7 +167,6 @@ export default function Home() {
 
             <ImportButton onPreview={setPreviewSrc} />
 
-            {/* matching media box height with right side */}
             <div className="mt-6 rounded-xl border border-white/10 bg-black/60 p-4 flex justify-center items-center h-[420px]">
               {previewSrc ? (
                 <img
@@ -119,7 +180,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* RIGHT: Convert + Rendered Image */}
+          {/* RIGHT: Convert + Rendered + Meta + Save */}
           <div className="rounded-3xl border border-white/10 bg-neutral-950/70 p-6 sm:p-8 backdrop-blur-xl shadow-[0_0_55px_rgba(167,139,250,0.25)]">
             <div className="mb-6 flex items-center gap-3 text-neutral-200">
               <svg className="h-6 w-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,7 +239,7 @@ export default function Home() {
 
               {err && <div className="col-span-2 text-sm text-red-400">{err}</div>}
 
-              {/* Rendered image – SAME HEIGHT as left box */}
+              {/* Rendered image – same height as left */}
               <div className="col-span-2">
                 <label className="text-sm text-neutral-300 mb-2 block">Rendered image</label>
                 <div className="rounded-xl border border-white/10 bg-black/60 p-4 flex justify-center items-center h-[420px]">
@@ -189,12 +250,50 @@ export default function Home() {
                       className="max-h-full max-w-full object-contain rounded-md"
                     />
                   ) : (
-                    <div className="text-sm text-neutral-400">
-                      Nothing rendered yet. Click “Convert to text”.
-                    </div>
+                    <div className="text-sm text-neutral-400">Nothing rendered yet. Click “Convert to text”.</div>
                   )}
                 </div>
               </div>
+
+              {/* Subject + Keywords + Save */}
+              <label className="text-sm text-neutral-300">
+                Subject
+                <input
+                  className="mt-1 w-full rounded-lg border border-purple-500/40 bg-neutral-900 px-3 py-2 outline-none focus:border-purple-400"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                />
+              </label>
+
+              <label className="text-sm text-neutral-300">
+                Keywords
+                <input
+                  className="mt-1 w-full rounded-lg border border-purple-500/40 bg-neutral-900 px-3 py-2 outline-none focus:border-purple-400"
+                  placeholder="comma, separated, tags"
+                  value={keywords}
+                  onChange={(e) => setKeywords(e.target.value)}
+                />
+              </label>
+
+              <div className="col-span-2 flex justify-end gap-3">
+                <button
+                  onClick={handleSave}
+                  disabled={saveStatus === "saving"}
+                  className="rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm text-neutral-200 backdrop-blur-sm hover:bg-white/15 disabled:opacity-60"
+                >
+                  {saveStatus === "saving" ? "Saving…" : "Save to Library"}
+                </button>
+              </div>
+
+              {saveMsg && (
+                <div
+                  className={`col-span-2 text-sm ${
+                    saveStatus === "saved" ? "text-green-400" : "text-red-400"
+                  }`}
+                >
+                  {saveMsg}
+                </div>
+              )}
             </div>
           </div>
           {/* end right */}
