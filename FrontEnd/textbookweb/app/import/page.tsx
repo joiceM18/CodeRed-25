@@ -292,6 +292,21 @@ export default function Home() {
                 />
               </label>
 
+              <div>
+                <label className="text-sm text-neutral-300">
+                pdf to text
+                <input
+                  className="mt-1 w-full rounded-lg border border-purple-500/40 bg-neutral-900 px-3 py-2 outline-none focus:border-purple-400"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                />
+              </label>
+
+
+              </div>
+
+              
+
               <label className="text-sm text-neutral-300">
                 Keywords
                 <input
