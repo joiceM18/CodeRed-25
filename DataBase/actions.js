@@ -95,7 +95,7 @@ const handleLogin = async (req, res) => {
 
             // ✅ FIX: look up by username only
             const [rows] = await pool.promise().query(
-                `SELECT userID, username, password_hash FROM Users WHERE username = ? LIMIT 1`,
+                `SELECT userID, username, password_hash FROM users WHERE username = ? LIMIT 1`,
                 [username]
             );
 

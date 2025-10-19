@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import SignupModal from "./SignupModal";
 import { setUser } from "../lib/userStore";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5000";
+const API_BASE = "https://codered-25.onrender.com";
 // const API_BASE = "/api"; 
 
 export default function LoginPage() {
@@ -48,10 +48,13 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
+      console.log("[Login] Response status:", res.status);
+      console.log("[Login] Response data:", data);
 
       if (res.ok) {
         // Try to extract userId and username from response
         const user = data.user ?? {};
+        console.log("[Login] user object:", user);
         // Accepts userID, userId, customer_id, username
         const userId = user.userID || user.userId || user.customer_id;
         const usernameVal = user.username || user.name || "";
@@ -63,7 +66,7 @@ export default function LoginPage() {
         setError(data.error || "Login failed. Please try again.");
       }
     } catch (err) {
-      console.error(err);
+      console.error("[Login] Exception:", err);
       setError("Something went wrong. Check console for details.");
     }
   }

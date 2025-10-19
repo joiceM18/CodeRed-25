@@ -1,6 +1,8 @@
 "use client";
 
 import { saveTextbook } from "../lib/saveTextbook";
+import { getUser } from "../lib/userStore";
+import { useRouter } from "next/navigation";
 
 // components/ImportButton.tsx
 
@@ -12,13 +14,34 @@ type Kind = "pdf" | "svg" | "video" | "png" |null;
 export default function ImportButton() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveMsg, setSaveMsg] = useState<string>("");
-  // Example: replace with real user ID from auth/session
-  const userID = 1;
+  const router = useRouter();
+  // Get user from localStorage
+  const [userID, setUserID] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const user = getUser();
+    if (user && user.userId) {
+      setUserID(Number(user.userId));
+      setLoading(false);
+    } else {
+      setLoading(true);
+      setTimeout(() => {
+        router.push("/");
+      }, 800);
+    }
+  }, [router]);
 
   async function onSaveTextbook() {
     if (!objectURL || !renderedImage || !analysis?.subject) {
       setSaveStatus("error");
       setSaveMsg("Missing required data to save textbook.");
+      return;
+    }
+    if (!userID) {
+      setSaveStatus("error");
+      setSaveMsg("Not logged in. Please sign in again.");
+      setTimeout(() => router.push("/"), 1000);
       return;
     }
     setSaveStatus("saving");
@@ -167,6 +190,15 @@ export default function ImportButton() {
       setStatus("error");
       setMessage(err?.message ?? "Something went wrong.");
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400"></div>
+        <span className="ml-4 text-lg text-yellow-300">Checking login…</span>
+      </div>
+    );
   }
 
   return (
