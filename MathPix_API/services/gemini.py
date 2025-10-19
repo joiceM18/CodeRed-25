@@ -18,7 +18,9 @@ SUBJECT_KEYWORDS = {
 
 def _local_extract_keywords(text: str, top_n: int = 10) -> List[str]:
     # extractor: count unigrams and bigrams (to capture multi-word keywords)
-    stopwords = set(['the', 'and', 'of', 'to', 'a', 'in', 'is', 'for', 'on', 'that', 'this', 'with', 'as', 'are', 'it', 'an', 'be', 'by'])
+    stopwords = set([
+        'the','and','of','to','a','in','is','for','on','that','this','with','as','are','it','an','be','by','or','from','at','also','but','not','into','than','then','so','such','these','those','their','there','here','very','more','most'
+    ])
     tokens = re.findall(r"\b[\w']+\b", text.lower())
     unigrams = []
     for t in tokens:
@@ -29,6 +31,8 @@ def _local_extract_keywords(text: str, top_n: int = 10) -> List[str]:
     freqs = {}
     # unigrams
     for u in unigrams:
+        if not u.isalpha():
+            continue
         freqs[u] = freqs.get(u, 0) + 1
 
     # bigrams (consecutive tokens that are not stopwords)
@@ -47,6 +51,12 @@ def _local_extract_keywords(text: str, top_n: int = 10) -> List[str]:
     # prefer bigrams first when frequencies tie; ensure uniqueness
     results = []
     for k, _ in sorted_items:
+        # filter out stopwords-only or low-signal terms
+        parts = k.split()
+        if any(p in stopwords for p in parts):
+            # don't skip if multi-word has strong term + stopword (e.g., 'law of') — simple heuristic: must contain >=1 non-stopword >=3 chars
+            if not any((p not in stopwords and len(p) >= 3) for p in parts):
+                continue
         if k not in results:
             results.append(k)
         if len(results) >= top_n:

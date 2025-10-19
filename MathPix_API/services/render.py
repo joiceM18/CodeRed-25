@@ -266,25 +266,57 @@ def render_text_to_image(
         y += int(font_size * 1.6)
 
     def _draw_line_with_bolding(draw_obj, x_start, y_pos, line_text, font_obj, bold_font_obj, keywords, fill):
-        """Draw a line by tokens, applying bold_font_obj or draw-twice for tokens matching keywords."""
+        """Draw a line by tokens, supporting multi-word keyword bolding.
+
+        Approach: tokenize by spaces, then use a sliding window to check for
+        multi-word (bigram, trigram, etc.) keyword matches. When matched, render
+        the entire span in bold.
+        """
         if not keywords:
             draw_obj.text((x_start, y_pos), line_text, font=font_obj, fill=fill)
             return
-        tokens = line_text.split(' ')
+
+        # Normalize keywords to lower-case, split to word arrays
+        lower_keys = [k.lower() for k in keywords if k]
+        key_word_lists = [k.split() for k in lower_keys]
+        max_k_len = max((len(lst) for lst in key_word_lists), default=1)
+
+        raw_tokens = line_text.split(' ')
+        tokens = [t for t in raw_tokens if t is not None]
+
+        def clean_token(tok: str) -> str:
+            return tok.lower().strip(".,;:()[]{}\"'`!?-")
+
         x = x_start
-        for tok in tokens:
-            clean = tok.lower().strip('.,;:()[]{}"\'')
-            is_bold = any(clean == k.lower() for k in keywords)
-            if is_bold:
-                if bold_font_obj:
-                    draw_obj.text((x, y_pos), tok, font=bold_font_obj, fill=fill)
-                else:
-                    # draw twice for bold effect
-                    draw_obj.text((x, y_pos), tok, font=font_obj, fill=fill)
-                    draw_obj.text((x+1, y_pos), tok, font=font_obj, fill=fill)
-            else:
+        i = 0
+        n = len(tokens)
+        while i < n:
+            matched = False
+            # try longest keywords first
+            for span in range(min(max_k_len, n - i), 0, -1):
+                window = tokens[i:i+span]
+                cleaned = [clean_token(t) for t in window]
+                if any(cleaned == kw for kw in key_word_lists):
+                    word = ' '.join(window)
+                    used_font = bold_font_obj if bold_font_obj else font_obj
+                    if bold_font_obj:
+                        draw_obj.text((x, y_pos), word, font=bold_font_obj, fill=fill)
+                    else:
+                        # draw with a subtle outline to simulate stronger bold
+                        outline = [(0,0), (1,0), (0,1), (1,1)]
+                        for dx, dy in outline:
+                            draw_obj.text((x+dx, y_pos+dy), word, font=font_obj, fill=fill)
+                    # advance x by rendered width + a space width using the same font used
+                    x += draw_obj.textlength(word, font=used_font)
+                    x += draw_obj.textlength(' ', font=used_font)
+                    i += span
+                    matched = True
+                    break
+            if not matched:
+                tok = tokens[i]
                 draw_obj.text((x, y_pos), tok, font=font_obj, fill=fill)
-            x += draw_obj.textlength(tok + ' ', font=font_obj)
+                x += draw_obj.textlength(tok + ' ', font=font_obj)
+                i += 1
 
     for line in wrapped_lines:
         _draw_line_with_bolding(draw, 10, y, line, font, bold_font, bold_keywords, text_color)

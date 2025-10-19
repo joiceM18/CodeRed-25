@@ -39,7 +39,21 @@ async def render_image(payload: dict = Body(...)):
         if use_gemini:
             analysis = analyze_text(text, top_n=top_n)
             subject = analysis.get("subject")
-            bold_keywords = analysis.get("keywords")
+            raw_keywords = analysis.get("keywords") or []
+            # sanitize keywords
+            stop = {"the","and","of","to","a","in","is","for","on","that","this","with","as","are","it","an","be","by","or","from","at","also","but","not"}
+            bold_keywords = []
+            for kw in raw_keywords:
+                if not kw:
+                    continue
+                s = str(kw).strip().lower()
+                if not s:
+                    continue
+                # skip if keyword is only stopwords/punctuation
+                parts = [p for p in s.split() if p and p not in stop]
+                if not parts:
+                    continue
+                bold_keywords.append(s)
 
         if simple:
             png_bytes = render_text_simple(
@@ -51,17 +65,19 @@ async def render_image(payload: dict = Body(...)):
                 bold_keywords=bold_keywords,
             )
         else:
-            # advanced renderer currently doesn't support keyword bolding; fallback to normal render
+            # advanced renderer: now supports subject header and keyword bolding
             png_bytes = render_text_to_image(
                 text,
                 font_family=font_family,
                 font_size=font_size,
                 max_width=max_width,
+                bg_color=bg_color,
+                text_color=text_color,
                 replace_literal_newlines=replace_literal_newlines,
                 collapse_newlines=collapse_newlines,
                 max_chars=max_chars,
-                text_color=text_color,
-                bg_color=bg_color,
+                subject=subject,
+                bold_keywords=bold_keywords,
             )
         # If caller asks for analysis metadata returned, package as JSON with base64 image
         return_analysis = bool(payload.get("return_analysis", False))
