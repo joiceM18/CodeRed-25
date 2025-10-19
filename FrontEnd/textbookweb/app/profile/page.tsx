@@ -6,36 +6,38 @@ import { useRouter } from "next/navigation";
 import { fetchTextbooks, type TextbookRow } from "@/lib/fetchTextbooks";
 import { getUser } from "@/lib/userStore";
 
+
 export default function ProfilePage() {
   const router = useRouter();
-  // Use userStore to get userId
   const [userID, setUserID] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
   const [items, setItems] = useState<TextbookRow[]>([]);
 
   useEffect(() => {
-    // Get userId from localStorage via userStore
-    const user = getUser();
-    console.log("[ProfilePage] getUser() result:", user);
-    if (user && user.userId) setUserID(Number(user.userId));
-    else setUserID(null);
+    // Only run on client
+    if (typeof window !== "undefined") {
+      const user = getUser();
+      console.log("[ProfilePage] getUser() result:", user);
+      if (user && user.userId) setUserID(Number(user.userId));
+      else setUserID(null);
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
     // If not logged in, redirect to login after a short delay
-    if (userID === null) {
+    if (!loading && userID === null) {
       console.log("[ProfilePage] No userID detected, redirecting to login...");
       setTimeout(() => {
         router.push("/");
       }, 1200);
     }
-  }, [userID, router]);
+  }, [userID, loading, router]);
 
   useEffect(() => {
-    if (!userID) return;
+    if (!userID || loading) return;
     const run = async () => {
-      setLoading(true);
       setError("");
       try {
         const resp = await fetchTextbooks(userID);
@@ -46,18 +48,17 @@ export default function ProfilePage() {
         }
       } catch (e: any) {
         setError(e?.message || "Failed to load textbooks");
-      } finally {
-        setLoading(false);
       }
     };
     run();
-  }, [userID]);
+  }, [userID, loading]);
 
   const grid = useMemo(() => {
     if (!items?.length) return null;
+    console.log("[ProfilePage] textbooks items:", items);
     return (
       <section className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {items.map((tb, i) => {
+        {items.map((tb) => {
           const subject = tb.subject || "(unknown)";
           // Build data URIs; default to PNG
           const inSrc = tb.textbook_input
@@ -68,7 +69,7 @@ export default function ProfilePage() {
             : "";
           return (
             <article
-              key={`${tb.textbookID ?? i}`}
+              key={tb.textbookID ? `tb-${tb.textbookID}` : `${tb.subject}-${tb.textbook_input.slice(0,8)}`}
               className="rounded-2xl border border-neutral-800/70 bg-neutral-900/60 p-5 shadow-[0_0_25px_rgba(255,215,0,0.12)]"
             >
               <h3 className="text-base font-semibold text-neutral-100">
@@ -80,7 +81,7 @@ export default function ProfilePage() {
                   {inSrc ? (
                     <img
                       src={inSrc}
-                      alt={`Input ${tb.textbookID ?? i}`}
+                      alt={`Input ${tb.textbookID ?? tb.subject}`}
                       className="w-full h-auto rounded-lg border border-neutral-800"
                     />
                   ) : (
@@ -92,7 +93,7 @@ export default function ProfilePage() {
                   {outSrc ? (
                     <img
                       src={outSrc}
-                      alt={`Output ${tb.textbookID ?? i}`}
+                      alt={`Output ${tb.textbookID ?? tb.subject}`}
                       className="w-full h-auto rounded-lg border border-neutral-800"
                     />
                   ) : (
@@ -115,7 +116,6 @@ export default function ProfilePage() {
           <h1 className="text-3xl font-semibold tracking-tight">
             <span className="text-[#ffd700]">Textify</span> • My Profile
           </h1>
-
           {/* initials badge */}
           <div
             aria-label="User initials"
@@ -129,18 +129,16 @@ export default function ProfilePage() {
       {/* content */}
       <div className="mx-auto max-w-7xl px-6 pb-16">
         {/* status */}
-        {!userID && (
+        {loading && (
+          <div className="mt-6 text-sm text-neutral-300">Loading…</div>
+        )}
+        {!loading && !userID && (
           <div className="mt-6 text-sm text-red-400">Not logged in. Please sign in to view your textbooks.</div>
         )}
-        {loading && userID && (
-          <div className="mt-6 text-sm text-neutral-300">Loading textbooks…</div>
-        )}
-        {error && (
+        {!loading && userID && error && (
           <div className="mt-6 text-sm text-red-400">{error}</div>
         )}
-
-        {/* textbooks grid */}
-        {userID && grid}
+        {!loading && userID && grid}
 
         {/* footer buttons */}
         <div className="mt-10 flex flex-wrap gap-3">

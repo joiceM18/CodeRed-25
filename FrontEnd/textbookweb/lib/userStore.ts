@@ -1,3 +1,7 @@
+// Debug: log current userStore value on import
+if (typeof window !== "undefined") {
+  console.log("[userStore] localStorage value:", localStorage.getItem("user"));
+}
 // Utility for storing and retrieving user info in localStorage
 export interface UserInfo {
   userId: number;
@@ -15,6 +19,7 @@ export function setUser(user: UserInfo) {
   // Always store as userId
   const toStore = { ...user, userId };
   localStorage.setItem(KEY, JSON.stringify(toStore));
+  console.log("[userStore] setUser: stored", toStore);
 }
 
 export function getUser(): UserInfo | null {
@@ -33,4 +38,5 @@ export function getUser(): UserInfo | null {
 
 export function clearUser() {
   localStorage.removeItem(KEY);
+  console.log("[userStore] clearUser: removed user from localStorage");
 }

@@ -1,15 +1,16 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import SignupModal from "./SignupModal";
-import { setUser } from "../lib/userStore";
+import { setUser, clearUser } from "../lib/userStore";
 
 const API_BASE = "https://codered-25.onrender.com";
 // const API_BASE = "/api"; 
 
-export default function LoginPage() {
+export default function HomePage() {
   const router = useRouter();
+
 
   // form state
   const [username, setUsername] = useState("");
