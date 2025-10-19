@@ -48,3 +48,26 @@ Example response:
 Notes
 - This is intentionally minimal. For production, add request validation, authentication, rate-limiting, logging, and error handling.
 - MathPix API usage requires valid credentials and may incur cost.
+
+Render endpoint
+You can render text into a PNG image with the new endpoint:
+
+POST /api/render/image
+
+JSON body:
+```json
+{
+	"text": "string (required)",
+	"font_family": "path/to/font.ttf (optional)",
+	"font_size": 24,
+	"max_width": 800
+}
+```
+
+Response: image/png binary data.
+
+Example using PowerShell:
+```powershell
+Invoke-RestMethod -Uri http://localhost:8000/api/render/image -Method Post -ContentType 'application/json' -Body (ConvertTo-Json @{ text = Get-Content 'C:\path\to\file.txt' -Raw; font_size = 24 }) -OutFile out.png
+```
+<!-- PDF support removed: PNG rendering is the canonical output. -->

@@ -1,3 +1,3 @@
-from . import ocr
+from . import ocr, render
 
-__all__ = ["ocr"]
+__all__ = ["ocr", "render"]
