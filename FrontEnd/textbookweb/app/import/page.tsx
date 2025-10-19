@@ -10,6 +10,8 @@ export default function Home() {
   // LEFT: preview (data URL produced by ImportButton)
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [extractedText, setExtractedText] = useState<string>("");
+
 
   // RIGHT: convert controls + result
   const [fontFamily, setFontFamily] = useState("Times New Roman (times)");
@@ -70,8 +72,14 @@ export default function Home() {
 
       const data = await res.json();
       const base64 = data?.image_base64 as string | undefined;
+
+      const ocrText =
+        (data?.extracted_text as string) ||
+        (data?.text as string) ||                  // fallback if backend returns text at top-level
+        (data?.analysis?.raw_text as string) || ""; 
       if (!base64) throw new Error("No image returned from convert API.");
       setRenderedImage(`data:image/png;base64,${base64}`);
+      setExtractedText(ocrText);
     } catch (e: any) {
       console.error(e);
       setErr(e?.message || "Conversion failed. Please try again.");
@@ -293,14 +301,16 @@ export default function Home() {
               </label>
 
               <div>
-                <label className="text-sm text-neutral-300">
-                pdf to text
-                <input
-                  className="mt-1 w-full rounded-lg border border-purple-500/40 bg-neutral-900 px-3 py-2 outline-none focus:border-purple-400"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                />
-              </label>
+               <label className="text-sm text-neutral-300 w-full">
+                  Extracted Text
+                  <textarea
+                    readOnly
+                    value={extractedText}
+                    className="mt-1 w-full rounded-lg border border-purple-500/40 bg-neutral-900 px-3 py-2 outline-none focus:border-purple-400 text-neutral-200"
+                    rows={6}
+                    placeholder="No text extracted yet..."
+                  />
+                </label>
 
 
               </div>

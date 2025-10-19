@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 
+
 type Props = {
   onPreview?: (src: string) => void; // returns a data URL for the left preview
 };

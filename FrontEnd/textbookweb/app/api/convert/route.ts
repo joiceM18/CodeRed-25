@@ -72,7 +72,12 @@ export async function POST(req: Request) {
     // Optionally also log the subject & keywords
     console.log("🟢 Render analysis:", renderJson?.analysis);
 
-    return NextResponse.json(renderJson, {
+    const result = {
+      ...renderJson,
+      extracted_text: text, // 🟣 add this line
+    };
+
+    return NextResponse.json(result, {
       status: 200,
       headers: { "Cache-Control": "no-store" },
     });
