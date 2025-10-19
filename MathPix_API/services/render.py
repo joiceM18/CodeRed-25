@@ -65,6 +65,7 @@ def _resolve_font_family(family: str):
         candidate = windows_map.get(fam)
         if candidate and os.path.isfile(candidate):
             return candidate
+    # also try bold variants if name ends with 'bold' requested elsewhere
     elif sys.platform.startswith("darwin"):
         candidate = mac_map.get(fam)
         if candidate and os.path.isfile(candidate):
@@ -78,6 +79,46 @@ def _resolve_font_family(family: str):
     return _find_system_font()
 
 
+def _resolve_bold_font(normal_font_path: str):
+    """Given a normal font path or family, attempt to return a bold variant path.
+
+    Heuristic: if provided a path that ends with '.ttf', try to find sibling files
+    with 'bd' or 'bold' in name. On Windows fonts folder, look for common bold names.
+    Returns None if not found.
+    """
+    if not normal_font_path:
+        return None
+    # if a family name was provided rather than path, try common bold names
+    lower = normal_font_path.lower()
+    # common windows bold paths
+    if sys.platform.startswith("win"):
+        candidates = [
+            lower.replace('.ttf', 'bd.ttf'),
+            lower.replace('.ttf', 'b.ttf'),
+            lower.replace('.ttf', 'bold.ttf'),
+        ]
+        for c in candidates:
+            if os.path.isfile(c):
+                return c
+
+    # sibling search if given a real path
+    try:
+        base = os.path.splitext(normal_font_path)[0]
+        dirn = os.path.dirname(normal_font_path)
+        possible = [
+            os.path.join(dirn, base + 'bd.ttf'),
+            os.path.join(dirn, base + 'b.ttf'),
+            os.path.join(dirn, base + '-Bold.ttf'),
+            os.path.join(dirn, base + 'Bold.ttf'),
+        ]
+        for p in possible:
+            if os.path.isfile(p):
+                return p
+    except Exception:
+        pass
+    return None
+
+
 def render_text_to_image(
     text: str,
     font_family: str = None,
@@ -88,6 +129,8 @@ def render_text_to_image(
     replace_literal_newlines: bool = True,
     collapse_newlines: bool = False,
     max_chars: int = 5000,
+    subject: str = None,
+    bold_keywords: list = None,
 ) -> bytes:
     """Render given text to a PNG image and return bytes.
 
@@ -134,6 +177,16 @@ def render_text_to_image(
             font = ImageFont.load_default()
     except Exception:
         font = ImageFont.load_default()
+
+    # try to resolve a bold font variant
+    bold_font = None
+    try:
+        if font_path:
+            bold_path = _resolve_bold_font(font_path)
+            if bold_path:
+                bold_font = ImageFont.truetype(bold_path, size=font_size)
+    except Exception:
+        bold_font = None
 
     # prepare drawing and wrap text by pixel width
     line_height = int(font_size * 1.2)
@@ -200,8 +253,41 @@ def render_text_to_image(
     draw = ImageDraw.Draw(image)
 
     y = 10
+
+    # If subject header requested, draw it first
+    if subject:
+        header_text = f"Subject: {subject}"
+        # use slightly larger font for header if possible
+        try:
+            header_font = ImageFont.truetype(font_path, size=int(font_size * 1.15)) if font_path else ImageFont.load_default()
+        except Exception:
+            header_font = ImageFont.load_default()
+        draw.text((10, y), header_text, font=header_font, fill=text_color)
+        y += int(font_size * 1.6)
+
+    def _draw_line_with_bolding(draw_obj, x_start, y_pos, line_text, font_obj, bold_font_obj, keywords, fill):
+        """Draw a line by tokens, applying bold_font_obj or draw-twice for tokens matching keywords."""
+        if not keywords:
+            draw_obj.text((x_start, y_pos), line_text, font=font_obj, fill=fill)
+            return
+        tokens = line_text.split(' ')
+        x = x_start
+        for tok in tokens:
+            clean = tok.lower().strip('.,;:()[]{}"\'')
+            is_bold = any(clean == k.lower() for k in keywords)
+            if is_bold:
+                if bold_font_obj:
+                    draw_obj.text((x, y_pos), tok, font=bold_font_obj, fill=fill)
+                else:
+                    # draw twice for bold effect
+                    draw_obj.text((x, y_pos), tok, font=font_obj, fill=fill)
+                    draw_obj.text((x+1, y_pos), tok, font=font_obj, fill=fill)
+            else:
+                draw_obj.text((x, y_pos), tok, font=font_obj, fill=fill)
+            x += draw_obj.textlength(tok + ' ', font=font_obj)
+
     for line in wrapped_lines:
-        draw.text((10, y), line, font=font, fill=text_color)
+        _draw_line_with_bolding(draw, 10, y, line, font, bold_font, bold_keywords, text_color)
         y += line_height
 
     # Crop to content
@@ -215,7 +301,7 @@ def render_text_to_image(
     return buf.read()
 
 
-def render_text_simple(text: str, font_family: str = None, font_size: int = 20, bg_color: str = "white", text_color: str = "black") -> bytes:
+def render_text_simple(text: str, font_family: str = None, font_size: int = 20, bg_color: str = "white", text_color: str = "black", bold_keywords: list = None) -> bytes:
     """Very small/simple renderer: convert literal "\\n" to newlines and draw each line.
 
     This intentionally does no wrapping and minimal measuring so it's fast.
@@ -261,7 +347,22 @@ def render_text_simple(text: str, font_family: str = None, font_size: int = 20, 
     draw = ImageDraw.Draw(image)
     y = 10
     for line in lines:
-        draw.text((10, y), line, font=font, fill=text_color)
+        if bold_keywords:
+            # naive: split line into tokens and draw bold for tokens that match keywords
+            tokens = line.split(' ')
+            x = 10
+            for tok in tokens:
+                draw_text = tok
+                is_bold = any(tok.lower().strip('.,;:') == k.lower() for k in bold_keywords)
+                if is_bold:
+                    # draw bold by drawing twice with 1px offset
+                    draw.text((x, y), draw_text, font=font, fill=text_color)
+                    draw.text((x+1, y), draw_text, font=font, fill=text_color)
+                else:
+                    draw.text((x, y), draw_text, font=font, fill=text_color)
+                x += int(draw.textlength(tok + ' ', font=font))
+        else:
+            draw.text((10, y), line, font=font, fill=text_color)
         y += line_height
 
     buf = BytesIO()

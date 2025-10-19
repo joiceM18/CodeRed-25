@@ -1,5 +1,8 @@
 from fastapi import APIRouter, Body, HTTPException, Response
 from services.render import render_text_to_image, render_text_simple
+from services.gemini import analyze_text
+import base64
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
@@ -24,13 +27,31 @@ async def render_image(payload: dict = Body(...)):
     text_color = payload.get("text_color", "black")
     bg_color = payload.get("bg_color", "white")
     max_chars = int(payload.get("max_chars", 5000))
+    use_gemini = bool(payload.get("use_gemini", False))
+    top_n = int(payload.get("top_n_keywords", 10))
 
     try:
         # If caller wants a very simple quick rendering (no wrapping), use the simple renderer
         simple = payload.get("simple", True)
+
+        bold_keywords = None
+        subject = None
+        if use_gemini:
+            analysis = analyze_text(text, top_n=top_n)
+            subject = analysis.get("subject")
+            bold_keywords = analysis.get("keywords")
+
         if simple:
-            png_bytes = render_text_simple(text, font_family=font_family, font_size=font_size, bg_color=bg_color, text_color=text_color)
+            png_bytes = render_text_simple(
+                text,
+                font_family=font_family,
+                font_size=font_size,
+                bg_color=bg_color,
+                text_color=text_color,
+                bold_keywords=bold_keywords,
+            )
         else:
+            # advanced renderer currently doesn't support keyword bolding; fallback to normal render
             png_bytes = render_text_to_image(
                 text,
                 font_family=font_family,
@@ -42,6 +63,17 @@ async def render_image(payload: dict = Body(...)):
                 text_color=text_color,
                 bg_color=bg_color,
             )
+        # If caller asks for analysis metadata returned, package as JSON with base64 image
+        return_analysis = bool(payload.get("return_analysis", False))
+        if return_analysis:
+            body_b64 = base64.b64encode(png_bytes).decode('ascii')
+            return JSONResponse({
+                'image_base64': body_b64,
+                'analysis': {
+                    'subject': subject,
+                    'keywords': bold_keywords,
+                }
+            })
         return Response(content=png_bytes, media_type="image/png")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
