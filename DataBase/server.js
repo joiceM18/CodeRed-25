@@ -17,7 +17,8 @@ const map_route = {
     '/api/auth/register',
     '/api/auth/login',
     '/api/textbook/add',
-    '/retrieveTextbook'
+    '/retrieveTextbook',
+    '/api/textbook/retrieve'
   ],
   'PUT': [],
   'DELETE': [],
