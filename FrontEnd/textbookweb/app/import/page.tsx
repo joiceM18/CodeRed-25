@@ -12,8 +12,9 @@ export default function Home() {
 
   // RIGHT: convert controls + result
   const [fontFamily, setFontFamily] = useState("Times New Roman (times)");
-  const [customTtf, setCustomTtf] = useState("");
-  const [fontSize, setFontSize] = useState<number | "">("");
+  //const [customTtf, setCustomTtf] = useState("");
+  const [customTtfFile, setCustomTtfFile] = useState<File | null>(null);
+  const [fontSize, setFontSize] = useState<string>("");
   const [renderedImage, setRenderedImage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -58,8 +59,9 @@ export default function Home() {
       const form = new FormData();
       form.set("file", file);
       form.set("fontFamily", fontFamily);
-      if (customTtf.trim()) form.set("customTtf", customTtf.trim());
-      form.set("fontSize", String(fontSize || 18));
+      if (customTtfFile) form.set("customTtfFile", customTtfFile);
+      form.set("fontSize", String(parseInt(fontSize || "18", 10)));
+
       form.set("useGemini", "true");
       form.set("simple", "false");
 
@@ -206,12 +208,12 @@ export default function Home() {
               </label>
 
               <label className="col-span-2 text-sm text-neutral-300">
-                Custom TTF path (optional)
+                Custom font (.ttf or .otf, optional)
                 <input
-                  className="mt-1 w-full rounded-lg border border-purple-500/40 bg-neutral-900 px-3 py-2 outline-none focus:border-purple-400 placeholder-neutral-500"
-                  placeholder="C:\\Windows\\Fonts\\arial.ttf"
-                  value={customTtf}
-                  onChange={(e) => setCustomTtf(e.target.value)}
+                  type="file"
+                  accept=".ttf,.otf"
+                  className="mt-1 w-full rounded-lg border border-purple-500/40 bg-neutral-900 px-3 py-2 ..."
+                  onChange={(e) => setCustomTtfFile(e.target.files?.[0] ?? null)}
                 />
               </label>
 
@@ -220,10 +222,9 @@ export default function Home() {
                 <input
                   type="number"
                   min={8}
-                  className="mt-1 w-full rounded-lg border border-purple-500/40 bg-neutral-900 px-3 py-2 outline-none focus:border-purple-400 placeholder-neutral-500"
-                  placeholder="18"
+                  // ...
                   value={fontSize}
-                  onChange={(e) => setFontSize(e.target.value === "" ? "" : Number(e.target.value))}
+                  onChange={(e) => setFontSize(e.target.value)}
                 />
               </label>
 

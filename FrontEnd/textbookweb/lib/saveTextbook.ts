@@ -9,6 +9,7 @@ export interface SaveTextbookParams {
   subject: string;
   userID: number;
   is_public?: boolean;
+  keywords?: string;
 }
 
 export async function saveTextbook(params: SaveTextbookParams): Promise<{ success: boolean; textbookID?: number; message?: string }> {
