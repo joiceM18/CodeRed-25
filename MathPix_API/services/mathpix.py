@@ -1,7 +1,8 @@
 import os
 import base64
-import imghdr
 import httpx
+from io import BytesIO
+from PIL import Image, UnidentifiedImageError
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -12,9 +13,30 @@ API_URL = "https://api.mathpix.com/v3/text"
 def _image_bytes_to_data_uri(image_bytes: bytes) -> str:
     """Convert raw image bytes to a data URI with an inferred image type.
 
-    imghdr.what() can sometimes return None; default to jpeg in that case.
+    Uses Pillow to detect image format (compatible with Python 3.13 where imghdr is removed).
+    Defaults to 'jpeg' if format cannot be identified.
     """
-    kind = imghdr.what(None, h=image_bytes) or "jpeg"
+    kind = "jpeg"
+    try:
+        with Image.open(BytesIO(image_bytes)) as img:
+            fmt = (img.format or "").lower()
+            # Map common Pillow format names to standard MIME subtype
+            mapping = {
+                "jpeg": "jpeg",
+                "jpg": "jpeg",
+                "png": "png",
+                "gif": "gif",
+                "webp": "webp",
+                "bmp": "bmp",
+                "tiff": "tiff",
+                "tif": "tiff",
+            }
+            kind = mapping.get(fmt, "jpeg") if fmt else "jpeg"
+    except UnidentifiedImageError:
+        kind = "jpeg"
+    except Exception:
+        kind = "jpeg"
+
     b64 = base64.b64encode(image_bytes).decode("ascii")
     return f"data:image/{kind};base64,{b64}"
 
