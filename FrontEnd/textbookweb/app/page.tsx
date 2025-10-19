@@ -17,9 +17,7 @@ export default function LoginPage() {
   // ui state
   const [error, setError] = useState<string>("");
   const [message, setMessage] = useState<string | null>(null);
-  const [messageType, setMessageType] = useState<"success" | "error" | null>(
-    null
-  );
+  const [messageType, setMessageType] = useState<"success" | "error" | null>(null);
   const [showSignup, setShowSignup] = useState(false);
 
   // browser-safe timeout type
@@ -51,11 +49,8 @@ export default function LoginPage() {
 
       if (res.ok) {
         const { customer_id, name, username: em, phone } = data.user ?? {};
-        localStorage.setItem(
-          "user",
-          JSON.stringify({ customer_id, name, username: em, phone })
-        );
-        router.push("/customer-dashboard"); // TODO: change to your route
+        localStorage.setItem("user", JSON.stringify({ customer_id, name, username: em, phone }));
+        router.push("/customer-dashboard"); // update route as needed
       } else {
         setError(data.error || "Login failed. Please try again.");
       }
@@ -67,11 +62,13 @@ export default function LoginPage() {
 
   return (
     <main
-      className="min-h-screen bg-[url('/images/restomainpic.jpg')] bg-cover bg-center"
+      className="min-h-screen bg-[url('/images/libpic1.jpg')] bg-cover bg-center bg-no-repeat relative"
       aria-label="Login page"
     >
       {/* dark overlay */}
-      <div className="min-h-screen bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60"></div>
+
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
         <div className="w-full max-w-md text-center rounded-2xl p-8 shadow-[0_0_35px_rgba(255,215,0,0.25)] bg-black/60 text-white">
           <h1 className="text-3xl font-semibold text-[#ffd700]">Textify</h1>
           <p className="mt-1 text-sm text-neutral-300">
@@ -85,7 +82,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="mt-6 text-left">
             <label className="block mb-2 text-sm">Username</label>
             <input
-              type="username"
+              type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -124,7 +121,7 @@ export default function LoginPage() {
           <p className="mt-3 text-sm">
             Or{" "}
             <Link href="/" className="text-[#e6c200] hover:underline">
-              Go to Home Page
+              Go to Import Page
             </Link>
           </p>
 
