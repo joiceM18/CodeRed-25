@@ -136,8 +136,26 @@ const handleLogin = async (req, res) => {
 
 
 
+/**
+ * Add a textbook record to the database.
+ * @param {Object} params
+ * @param {string} params.textbook_input - base64 or URL string of input image
+ * @param {string} params.textbook_output - base64 or URL string of output image
+ * @param {string} params.subject
+ * @param {number} params.userID
+ * @param {boolean} [params.is_public=true]
+ * @returns {Promise<number>} inserted textbookID
+ */
+async function addTextbook({ textbook_input, textbook_output, subject, userID, is_public = true }) {
+    const sql = `INSERT INTO textbooks (textbook_input, textbook_output, subject, is_public, userID) VALUES (?, ?, ?, ?, ?)`;
+    const values = [textbook_input, textbook_output, subject, is_public, userID];
+    const [result] = await pool.promise().query(sql, values);
+    return result.insertId;
+}
+
 module.exports = {
     getUsers,
     handleSignup,
-    handleLogin
+    handleLogin,
+    addTextbook
 };

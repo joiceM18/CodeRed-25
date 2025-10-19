@@ -1,11 +1,51 @@
-// components/ImportButton.tsx
 "use client";
+
+import { saveTextbook } from "../lib/saveTextbook";
+
+// components/ImportButton.tsx
 
 import { useRef, useState, useEffect } from "react";
 
 type Kind = "pdf" | "svg" | "video" | "png" |null;
 
 export default function ImportButton() {
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveMsg, setSaveMsg] = useState<string>("");
+  // Example: replace with real user ID from auth/session
+  const userID = 1;
+
+  async function onSaveTextbook() {
+    if (!objectURL || !renderedImage || !analysis?.subject) {
+      setSaveStatus("error");
+      setSaveMsg("Missing required data to save textbook.");
+      return;
+    }
+    setSaveStatus("saving");
+    setSaveMsg("");
+    try {
+      // textbook_input: original image (objectURL or base64), textbook_output: renderedImage (base64), subject, userID
+      // We'll use the base64 PNG for both for now
+      const inputBase64 = objectURL.startsWith("data:") ? objectURL.split(",")[1] : objectURL;
+      const outputBase64 = renderedImage.split(",")[1];
+      const resp = await saveTextbook({
+        textbook_input: inputBase64,
+        textbook_output: outputBase64,
+        subject: analysis.subject || "",
+        userID,
+        is_public: true
+      });
+      if (resp.success) {
+        setSaveStatus("saved");
+        setSaveMsg(`Saved! textbookID: ${resp.textbookID}`);
+      } else {
+        setSaveStatus("error");
+        setSaveMsg(resp.message || "Failed to save textbook.");
+      }
+    } catch (e: any) {
+      setSaveStatus("error");
+      setSaveMsg(e?.message || "Failed to save textbook.");
+    }
+  }
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [fileName, setFileName] = useState("");
@@ -13,6 +53,11 @@ export default function ImportButton() {
   const [message, setMessage] = useState("");
   const [objectURL, setObjectURL] = useState<string | null>(null);
   const [kind, setKind] = useState<Kind>(null);
+  const [renderedImage, setRenderedImage] = useState<string | null>(null); // data URL of PNG from backend
+  const [analysis, setAnalysis] = useState<{ subject?: string; keywords?: string[] } | null>(null);
+  const [fontFamily, setFontFamily] = useState<string>("segoeui");
+  const [fontSize, setFontSize] = useState<number>(18);
+  const [showZoom, setShowZoom] = useState<boolean>(false);
 
   useEffect(() => {
     return () => {
@@ -88,6 +133,41 @@ export default function ImportButton() {
     }
   }
 
+  async function onConvertToText() {
+    const file = inputRef.current?.files?.[0];
+    if (!file) return;
+    try {
+      setStatus("uploading");
+      setMessage("");
+      setRenderedImage(null);
+      setAnalysis(null);
+
+      const form = new FormData();
+      form.set("file", file);
+      form.set("fontFamily", fontFamily);
+      form.set("fontSize", String(fontSize));
+      form.set("useGemini", "true");
+      form.set("simple", "false"); // use advanced renderer for wrapping + header
+
+      const res = await fetch("/api/convert", { method: "POST", body: form });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || "Convert failed");
+      }
+      const data = await res.json();
+      const base64 = data?.image_base64 as string;
+      const analysisMeta = data?.analysis as { subject?: string; keywords?: string[] };
+      if (!base64) throw new Error("No image returned");
+      setRenderedImage(`data:image/png;base64,${base64}`);
+      setAnalysis(analysisMeta || null);
+      setStatus("done");
+      setMessage("Converted.");
+    } catch (err: any) {
+      setStatus("error");
+      setMessage(err?.message ?? "Something went wrong.");
+    }
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <input
@@ -147,17 +227,88 @@ export default function ImportButton() {
 
         {/* Right side: Convert button + empty box */}
         <div className="flex flex-col justify-start items-center gap-4">
-        <button
-            onClick={() => console.log("Convert to text clicked!")}
-            className="rounded-xl px-4 py-2 border hover:bg-gray-800 transition"
-        >
-            Convert to text
-        </button>
+        <div className="flex flex-col gap-2 w-64">
+          <label className="text-sm">Font family</label>
+          <select
+            className="rounded border px-2 py-1 text-black"
+            value={fontFamily}
+            onChange={(e) => setFontFamily(e.target.value)}
+          >
+            <option value="segoeui">Segoe UI (segoeui)</option>
+            <option value="arial">Arial (arial)</option>
+            <option value="times">Times New Roman (times)</option>
+            <option value="calibri">Calibri (calibri)</option>
+            <option value="dejavusans">DejaVu Sans (dejavusans)</option>
+          </select>
+          <label className="text-xs opacity-80">Custom TTF path (optional)</label>
+          <input
+            className="rounded border px-2 py-1 text-black"
+            placeholder="C:\\Windows\\Fonts\\arial.ttf"
+            onBlur={(e) => {
+              if (e.target.value.trim()) setFontFamily(e.target.value.trim());
+            }}
+          />
+          <label className="text-sm">Font size</label>
+          <input
+            className="rounded border px-2 py-1 text-black"
+            type="number"
+            value={fontSize}
+            min={10}
+            max={48}
+            onChange={(e) => setFontSize(parseInt(e.target.value || "18", 10))}
+          />
+          <button
+            onClick={onConvertToText}
+            className="rounded-xl px-4 py-2 border hover:bg-gray-800 transition mt-2 disabled:opacity-50"
+            disabled={!fileName || status === "uploading"}
+          >
+            {status === "uploading" ? "Converting…" : "Convert to text"}
+          </button>
+        </div>
 
-            {/* Empty box placeholder */}
-            <div className="w-64 h-40 border border-gray-600 rounded-xl bg-black/20 flex items-center justify-center">
-                {/* You can put text or content here later */}
+            <div className="w-72 min-h-40 border border-gray-600 rounded-xl bg-black/10 p-2">
+              {renderedImage ? (
+                <img
+                  src={renderedImage}
+                  alt="Rendered"
+                  className="w-full h-auto cursor-zoom-in"
+                  onClick={() => setShowZoom(true)}
+                />
+              ) : (
+                <div className="text-sm text-gray-300 p-3">Rendered image will appear here.</div>
+              )}
+              {analysis && (
+                <div className="mt-2 text-xs text-left">
+                  <div><b>Subject:</b> {analysis.subject ?? "(unknown)"}</div>
+                  {analysis.keywords?.length ? (
+                    <div><b>Keywords:</b> {analysis.keywords.join(", ")}</div>
+                  ) : null}
+                  <button
+                    className="mt-2 rounded px-3 py-1 border bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                    onClick={onSaveTextbook}
+                    disabled={saveStatus === "saving"}
+                  >
+                    {saveStatus === "saving" ? "Saving..." : "Save to Library"}
+                  </button>
+                  {saveMsg && (
+                    <div className={saveStatus === "saved" ? "text-green-600" : "text-red-600"}>{saveMsg}</div>
+                  )}
+                </div>
+              )}
             </div>
+
+            {showZoom && renderedImage && (
+              <div
+                className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6"
+                onClick={() => setShowZoom(false)}
+              >
+                <img
+                  src={renderedImage}
+                  alt="Rendered Zoom"
+                  className="max-w-[95vw] max-h-[90vh] object-contain cursor-zoom-out"
+                />
+              </div>
+            )}
         </div>
         </div>
     )}
