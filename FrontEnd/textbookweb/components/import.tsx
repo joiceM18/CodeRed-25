@@ -49,7 +49,29 @@ export default function ImportButton() {
     try {
       // textbook_input: original image (objectURL or base64), textbook_output: renderedImage (base64), subject, userID
       // We'll use the base64 PNG for both for now
-      const inputBase64 = objectURL.startsWith("data:") ? objectURL.split(",")[1] : objectURL;
+      async function blobUrlToBase64(blobUrl: string): Promise<string> {
+        const response = await fetch(blobUrl);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const dataUrl = reader.result as string;
+            // Remove the data:image/png;base64, prefix
+            resolve(dataUrl.split(",")[1]);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      }
+
+      let inputBase64: string;
+      if (objectURL.startsWith("blob:")) {
+        inputBase64 = await blobUrlToBase64(objectURL);
+      } else if (objectURL.startsWith("data:")) {
+        inputBase64 = objectURL.split(",")[1];
+      } else {
+        inputBase64 = objectURL;
+      }
       const outputBase64 = renderedImage.split(",")[1];
       const resp = await saveTextbook({
         textbook_input: inputBase64,

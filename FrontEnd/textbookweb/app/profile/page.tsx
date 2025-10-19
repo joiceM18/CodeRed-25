@@ -68,11 +68,19 @@ export default function ProfilePage() {
         {items.map((tb) => {
           const subject = tb.subject || "(unknown)";
           // Build data URIs; default to PNG
+          // If value looks like a URL, use it directly; else fallback to base64
+          function isBlobUrl(val: string) {
+            return typeof val === "string" && val.startsWith("https://");
+          }
           const inSrc = tb.textbook_input
-            ? `data:image/png;base64,${tb.textbook_input}`
+            ? isBlobUrl(tb.textbook_input)
+              ? tb.textbook_input
+              : `data:image/png;base64,${tb.textbook_input}`
             : "";
           const outSrc = tb.textbook_output
-            ? `data:image/png;base64,${tb.textbook_output}`
+            ? isBlobUrl(tb.textbook_output)
+              ? tb.textbook_output
+              : `data:image/png;base64,${tb.textbook_output}`
             : "";
           return (
             <article
