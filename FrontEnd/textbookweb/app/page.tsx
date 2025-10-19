@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SignupModal from "./SignupModal";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5000";
 
 export default function LoginPage() {
   const router = useRouter();
