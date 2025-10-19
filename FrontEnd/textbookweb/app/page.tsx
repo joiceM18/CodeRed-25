@@ -72,7 +72,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md text-center rounded-2xl p-8 shadow-[0_0_35px_rgba(255,215,0,0.25)] bg-black/60 text-white">
           <h1 className="text-3xl font-semibold text-[#ffd700]">Textify</h1>
           <p className="mt-1 text-sm text-neutral-300">
-            Sign in to access your accessible study library
+            Sign in to access your accessible study digital library
           </p>
 
           {error && (
@@ -116,13 +116,6 @@ export default function LoginPage() {
             >
               Create an account
             </button>
-          </p>
-
-          <p className="mt-3 text-sm">
-            Or{" "}
-            <Link href="/" className="text-[#e6c200] hover:underline">
-              Go to Import Page
-            </Link>
           </p>
 
           {/* toast message */}
