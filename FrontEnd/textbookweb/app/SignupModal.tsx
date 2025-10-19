@@ -13,7 +13,14 @@ export default function SignupModal({ onClose, onSuccess, setError, apiBase }: P
   const [form, setForm] = useState({ username: "", password: "" });
   const [busy, setBusy] = useState(false);
 
-  async function handleSignup() {
+  // 🖱️ Mouse click handlers for buttons
+  function handleCancelClick() {
+    console.log("🖱️ Cancel button clicked");
+    onClose();
+  }
+
+  async function handleSignupClick() {
+    console.log("🖱️ Sign up button clicked");
     setBusy(true);
     try {
       const res = await fetch(`${apiBase}/api/auth/register`, {
@@ -23,7 +30,6 @@ export default function SignupModal({ onClose, onSuccess, setError, apiBase }: P
       });
       const data = await res.json();
       if (res.ok) {
-        // backend returns: { success, user: { userID, username } }
         localStorage.setItem("user", JSON.stringify(data.user));
         onSuccess();
         onClose();
@@ -66,13 +72,16 @@ export default function SignupModal({ onClose, onSuccess, setError, apiBase }: P
         </div>
 
         <div className="mt-6 flex gap-3">
-          <button onClick={onClose} className="flex-1 rounded-lg border border-neutral-700 py-3">
+          <button
+            onClick={handleCancelClick}
+            className="flex-1 rounded-lg border border-neutral-700 py-3 cursor-pointer hover:bg-neutral-800 transition"
+          >
             Cancel
           </button>
           <button
-            onClick={handleSignup}
+            onClick={handleSignupClick}
             disabled={busy}
-            className="flex-1 rounded-lg bg-[#ffd900dc] text-black font-semibold py-3 disabled:opacity-50"
+            className="flex-1 rounded-lg bg-[#ffd900dc] text-black font-semibold py-3 cursor-pointer disabled:opacity-50 hover:bg-[#ffd900] transition"
           >
             {busy ? "Creating..." : "Sign up"}
           </button>

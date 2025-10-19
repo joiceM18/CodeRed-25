@@ -20,6 +20,10 @@ async function routes(req, res) {
         return actions.handleLogin(req, res);
     }
 
+    if (URL.startsWith('/retrieveTextbook') && method === 'POST') {
+        return actions.handleRetrieveTextbook(req, res);
+    }
+
     // Add textbook record
     if (URL.startsWith('/api/textbook/add') && method === 'POST') {
         let body = '';

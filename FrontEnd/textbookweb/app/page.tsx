@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import SignupModal from "./SignupModal";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5000";
@@ -21,7 +20,6 @@ export default function LoginPage() {
   const [messageType, setMessageType] = useState<"success" | "error" | null>(null);
   const [showSignup, setShowSignup] = useState(false);
 
-  // browser-safe timeout type
   const timeoutId = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function displayMessage(msg: string, type: "success" | "error", ms = 2500) {
@@ -39,6 +37,8 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
 
+    console.log("🖱️ Login button clicked");
+
     try {
       const res = await fetch(`${API_BASE}/login`, {
         method: "POST",
@@ -50,8 +50,11 @@ export default function LoginPage() {
 
       if (res.ok) {
         const { customer_id, name, username: em, phone } = data.user ?? {};
-        localStorage.setItem("user", JSON.stringify({ customer_id, name, username: em, phone }));
-        router.push("/import"); // update route as needed
+        localStorage.setItem(
+          "user",
+          JSON.stringify({ customer_id, name, username: em, phone })
+        );
+        router.push("/import");
       } else {
         setError(data.error || "Login failed. Please try again.");
       }
@@ -61,24 +64,26 @@ export default function LoginPage() {
     }
   }
 
+  function handleCreateAccountClick() {
+    console.log("🖱️ Create Account button clicked");
+    setShowSignup(true);
+  }
+
   return (
     <main
       className="min-h-screen bg-[url('/images/libpic1.jpg')] bg-cover bg-center bg-no-repeat relative"
       aria-label="Login page"
     >
-      {/* dark overlay */}
       <div className="absolute inset-0 bg-black/60"></div>
 
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
         <div className="w-full max-w-md text-center rounded-2xl p-8 shadow-[0_0_35px_rgba(255,215,0,0.25)] bg-black/60 text-white">
           <h1 className="text-3xl font-semibold text-[#ffd700]">Textify</h1>
           <p className="mt-1 text-sm text-neutral-300">
-            Sign in to access your accessible study library
+            Sign in to access your accessible study digital library
           </p>
 
-          {error && (
-            <p className="mt-3 text-sm font-semibold text-red-400">{error}</p>
-          )}
+          {error && <p className="mt-3 text-sm font-semibold text-red-400">{error}</p>}
 
           <form onSubmit={handleSubmit} className="mt-6 text-left">
             <label className="block mb-2 text-sm">Username</label>
@@ -103,7 +108,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="mt-6 w-full rounded-lg bg-[#ffd700] text-black font-semibold py-3 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transition"
+              className="mt-6 w-full rounded-lg bg-[#ffd700] text-black font-semibold py-3 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transition cursor-pointer"
             >
               Login
             </button>
@@ -112,21 +117,13 @@ export default function LoginPage() {
           <p className="mt-4 text-sm">
             New to Textify?{" "}
             <button
-              onClick={() => setShowSignup(true)}
-              className="text-[#e6c200] hover:underline outline-none focus-visible:underline"
+              onClick={handleCreateAccountClick}
+              className="text-[#e6c200] hover:underline outline-none focus-visible:underline cursor-pointer"
             >
               Create an account
             </button>
           </p>
 
-          <p className="mt-3 text-sm">
-            Or{" "}
-            <Link href="/" className="text-[#e6c200] hover:underline">
-              Go to Import Page
-            </Link>
-          </p>
-
-          {/* toast message */}
           {message && (
             <div
               className={`mt-4 rounded-md px-3 py-2 text-sm border ${
