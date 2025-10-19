@@ -134,7 +134,36 @@ const handleLogin = async (req, res) => {
     });
 };
 
+const getTextbooksByUser = async (userID) => {
+    const sql = `SELECT * FROM textbooks WHERE userID = ?`;
+    const [rows] = await pool.promise().query(sql, [userID]);
+    return rows;
+};
 
+const handleRetrieveTextbook = async (req, res) => {
+    let body = '';
+    req.on("data", (chunk) => {
+        body += chunk.toString();
+    });
+
+    req.on("end", async () => {
+        try {
+            const parsed = JSON.parse(body || '{}');
+            const { userID } = parsed;
+            if (!userID) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ success: false, message: "Missing userID" }));
+                return;
+            }
+            const textbooks = await getTextbooksByUser(userID);
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: true, textbooks }));
+        } catch (err) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: false, message: err.message || "Failed to retrieve textbooks" }));
+        }
+    });
+};
 
 /**
  * Add a textbook record to the database.
@@ -157,5 +186,7 @@ module.exports = {
     getUsers,
     handleSignup,
     handleLogin,
-    addTextbook
+    addTextbook,
+    getTextbooksByUser,
+    handleRetrieveTextbook
 };
