@@ -22,8 +22,8 @@ export default function Home() {
   const [err, setErr] = useState<string | null>(null);
 
   // Meta + save
-  const [subject, setSubject] = useState("general");
-  const [keywords, setKeywords] = useState("can, can you, div, solve, you");
+  const [subject, setSubject] = useState("");
+  const [keywords, setKeywords] = useState("");
   const [userID, setUserID] = useState<number | null>(null);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveMsg, setSaveMsg] = useState("");
